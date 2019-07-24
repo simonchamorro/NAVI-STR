@@ -68,16 +68,20 @@ def process(fname):
         out_fname = crops_path + f'{frame_num}_{i + 1}.png'
         if do_img and not os.path.isfile(out_fname):
             crop_img(img, x, y, out_fname)
-        labels = label_df[label_df.frame == int(frame_num)]
-        for j in range(len(labels)):
-            label_x_min = labels.iloc[j].x_min - x
-            label_x_max = labels.iloc[j].x_max - x
-            if label_x_min < 0: label_x_min = W - x + labels.iloc[j].x_min
-            if label_x_max < 0: label_x_max = W - x + labels.iloc[j].x_max
-            if label_x_max <= crop_W and label_x_min <= crop_W:
-                frame = float(frame_num) + (i+1)/100
-                new_labels.append((frame, labels.iloc[j].obj_type, labels.iloc[j].house_number, \
-                labels.iloc[j].street_name, label_x_min, label_x_max, labels.iloc[j].y_min, labels.iloc[j].y_max))
+        if do_labels:
+            process_frame_labels(frame_num, i, x)
+
+def process_frame_labels(frame_num, i, x):
+    labels = label_df[label_df.frame == int(frame_num)]
+    for j in range(len(labels)):
+        label_x_min = labels.iloc[j].x_min - x
+        label_x_max = labels.iloc[j].x_max - x
+        if label_x_min < 0: label_x_min = W - x + labels.iloc[j].x_min
+        if label_x_max < 0: label_x_max = W - x + labels.iloc[j].x_max
+        if label_x_max <= crop_W and label_x_min <= crop_W:
+            frame = float(frame_num) + (i+1)/100
+            new_labels.append((frame, labels.iloc[j].obj_type, labels.iloc[j].house_number, \
+            labels.iloc[j].street_name, label_x_min, label_x_max, labels.iloc[j].y_min, labels.iloc[j].y_max))
 
 def crop_img(img, x, y, out_fname):
     if (x + crop_W) % img.shape[1] != (x + crop_W):
@@ -109,6 +113,7 @@ label_df.index = pd.MultiIndex.from_arrays([label_df.frame, label_index], names=
 label_df.sort_index(inplace=True)
 
 do_img = True
+do_labels = True
 new_labels = []    
 
 fnames = [fname for fname in os.listdir(panos_path) if fname.split('.')[-1] == "png"]
@@ -119,5 +124,7 @@ new_label_df = pd.DataFrame(new_labels, columns = ["frame", "obj_type", "house_n
 label_index = new_label_df.groupby(new_label_df.frame).cumcount()
 new_label_df.index = pd.MultiIndex.from_arrays([new_label_df.frame, label_index], names=["frame", "label"])
 new_label_df.sort_index(inplace=True)
-import pdb; pdb.set_trace()
+if do_labels:
+    new_label_df.to_hdf(labels_path + "crop_labels.hdf5", key="df", index=False)
+    import pdb; pdb.set_trace()
 print(datetime.now() - startTime)

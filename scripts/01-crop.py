@@ -1,4 +1,4 @@
-"""Crops 16 views from equirrectangular panos"""
+"""Crops 16 views from equirrectangular panos and remaps their labels"""
 
 import os
 import cv2
@@ -55,24 +55,29 @@ def process_labels(paths):
     print("num labels failed to parse: " + str(len(failed_to_parse)))
     return label_df
 
-def crop_proc(q):
-    while True:
-        try:
-            fname = q.get(True, 1)
-            print("Processing: " + fname)
-            frame_num = fname.split(".")[0].split("_")[-1]
-            if do_img:
-                img = cv2.imread(panos_path + fname)
-                img = img[crop_margin:H - crop_margin]
+def process(fname):
+    print("Processing: " + fname)
+    frame_num = fname.split(".")[0].split("_")[-1]
+    if do_img:
+        img = cv2.imread(panos_path + fname)
+        img = img[crop_margin:H - crop_margin]
 
-            for idx in range(16):
-                x = int(idx * W / 16)
-                y = 0
-                out_fname = crops_path + f'{frame_num}_{idx + 1}.png'
-                if do_img and not os.path.isfile(out_fname):
-                    crop_img(img, x, y, out_fname)
-        except:
-            return
+    for i in range(16):
+        x = int(i * W / 16)
+        y = 0
+        out_fname = crops_path + f'{frame_num}_{i + 1}.png'
+        if do_img and not os.path.isfile(out_fname):
+            crop_img(img, x, y, out_fname)
+        labels = label_df[label_df.frame == int(frame_num)]
+        for j in range(len(labels)):
+            label_x_min = labels.iloc[j].x_min - x
+            label_x_max = labels.iloc[j].x_max - x
+            if label_x_min < 0: label_x_min = W - x + labels.iloc[j].x_min
+            if label_x_max < 0: label_x_max = W - x + labels.iloc[j].x_max
+            if label_x_max <= crop_W and label_x_min <= crop_W:
+                frame = float(frame_num) + (i+1)/100
+                new_labels.append((frame, labels.iloc[j].obj_type, labels.iloc[j].house_number, \
+                labels.iloc[j].street_name, label_x_min, label_x_max, labels.iloc[j].y_min, labels.iloc[j].y_max))
 
 def crop_img(img, x, y, out_fname):
     if (x + crop_W) % img.shape[1] != (x + crop_W):
@@ -103,36 +108,16 @@ label_index = label_df.groupby(label_df.frame).cumcount()
 label_df.index = pd.MultiIndex.from_arrays([label_df.frame, label_index], names=["frame", "label"])
 label_df.sort_index(inplace=True)
 
-q = Queue()
-
-num_procs = 1
 do_img = True
-procs = []
-new_labels = []
-
-# import pdb; pdb.set_trace()
-# labels = label_df[label_df.frame == 2271]
-# for idx in range(len(labels)):
-#     x_min = labels.iloc[idx].x_min - x
-#     x_max = labels.iloc[idx].x_max - x
-#     if x_min < 0: x_min = W - x + x_min
-#     if x_max < 0: x_max = W - x + x_max
-#     if x_max <= crop_W and x_max <= crop_W:
-#         new_labels.append((frame, obj_type, house_number, street_name, x_min, x_max, y_min, y_max))
-#     label_df = pd.DataFrame(labels, columns = ["frame", "obj_type", "house_number", "street_name", "x_min", "x_max", "y_min", "y_max"])
-    
-
-for i in range(num_procs):
-    p = mp.Process(target=crop_proc, args=(q,))
-    procs.append(p)
-    p.start()
+new_labels = []    
 
 fnames = [fname for fname in os.listdir(panos_path) if fname.split('.')[-1] == "png"]
-while fnames:
-    if q.empty():
-        q.put(fnames.pop())
+for fname in fnames:
+    process(fname)
 
-for p in procs:
-    p.join()
-
+new_label_df = pd.DataFrame(new_labels, columns = ["frame", "obj_type", "house_number", "street_name", "x_min", "x_max", "y_min", "y_max"])
+label_index = new_label_df.groupby(new_label_df.frame).cumcount()
+new_label_df.index = pd.MultiIndex.from_arrays([new_label_df.frame, label_index], names=["frame", "label"])
+new_label_df.sort_index(inplace=True)
+import pdb; pdb.set_trace()
 print(datetime.now() - startTime)

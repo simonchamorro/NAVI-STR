@@ -10,3 +10,7 @@ tensorboard
 terminaltables
 pillow
 tqdm
+lmdb
+torchvision
+nltk
+natsort

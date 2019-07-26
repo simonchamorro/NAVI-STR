@@ -117,9 +117,9 @@ def crop_img(img, x, y, out_fname):
 
 
 panos_path = "./data/panos/"
-crops_path = "./PyTorch-YOLO-v3/data/sevn/images/"
-labels_path = "./data/labels/raw/"
-yolo_labels_path = "./PyTorch-YOLO-v3/data/sevn/labels/"
+crops_path = "./PyTorch-YOLOv3/data/sevn/images/"
+labels_path = "./data/labels/"
+yolo_labels_path = "./PyTorch-YOLOv3/data/sevn/labels/"
 
 W = int(3840)
 H = int(1920)
@@ -128,7 +128,7 @@ crop_H = int(1280)
 crop_margin = int(H/6)
 total_frames = len(os.listdir(panos_path))
 frames = [fname.split(".")[0].split("_")[-1] for fname in os.listdir(panos_path)]
-paths = [labels_path + "pano_" + str(frame).zfill(6) + ".xml" for frame in frames]
+paths = [labels_path + "raw/pano_" + str(frame).zfill(6) + ".xml" for frame in frames]
 paths = [path for path in paths if os.path.isfile(path)]
 label_df = process_labels(paths)
 label_index = label_df.groupby(label_df.frame).cumcount()

@@ -73,6 +73,7 @@ def process(fname):
 
 def process_frame_labels(frame_num, i, x):
     labels = label_df[label_df.frame == int(frame_num)]
+    temp = []
     for j in range(len(labels)):
         label_x_min = labels.iloc[j].x_min - x
         label_x_max = labels.iloc[j].x_max - x
@@ -80,8 +81,29 @@ def process_frame_labels(frame_num, i, x):
         if label_x_max < 0: label_x_max = W - x + labels.iloc[j].x_max
         if label_x_max <= crop_W and label_x_min <= crop_W:
             frame = float(frame_num) + (i+1)/100
-            new_labels.append((frame, labels.iloc[j].obj_type, labels.iloc[j].house_number, \
+            temp.append((frame, labels.iloc[j].obj_type, labels.iloc[j].house_number, \
             labels.iloc[j].street_name, label_x_min, label_x_max, labels.iloc[j].y_min, labels.iloc[j].y_max))
+     
+    if len(temp) != 0:
+        with open(f'{yolo_labels_path}{frame_num}_{i + 1}.txt', 'w') as f:
+            for tup in temp:
+                class_idx = class_to_idx(tup[1])
+                x_center = ((tup[5] + tup[4]) / 2) / crop_W
+                y_center = ((tup[7] + tup[6]) / 2) / crop_H
+                width = (tup[5] - tup[4]) / crop_W
+                height = (tup[7] - tup[6]) / crop_H
+                f.write(f"{class_idx} {x_center} {y_center} {width} {height}\n")
+        f.close()
+    new_labels.extend(temp)
+
+def class_to_idx(obj_type):
+    if obj_type == "door":
+        return 0
+    elif obj_type == "house_number":
+        return 1
+    elif obj_type =="street_sign":
+        return 2
+    return -1
 
 def crop_img(img, x, y, out_fname):
     if (x + crop_W) % img.shape[1] != (x + crop_W):
@@ -95,8 +117,9 @@ def crop_img(img, x, y, out_fname):
 
 
 panos_path = "./data/panos/"
-crops_path = "./data/crops/"
-labels_path = "./data/labels/"
+crops_path = "./PyTorch-YOLO-v3/data/sevn/images/"
+labels_path = "./data/labels/raw/"
+yolo_labels_path = "./PyTorch-YOLO-v3/data/sevn/labels/"
 
 W = int(3840)
 H = int(1920)
@@ -105,14 +128,14 @@ crop_H = int(1280)
 crop_margin = int(H/6)
 total_frames = len(os.listdir(panos_path))
 frames = [fname.split(".")[0].split("_")[-1] for fname in os.listdir(panos_path)]
-paths = [labels_path + "raw/pano_" + str(frame).zfill(6) + ".xml" for frame in frames]
+paths = [labels_path + "pano_" + str(frame).zfill(6) + ".xml" for frame in frames]
 paths = [path for path in paths if os.path.isfile(path)]
 label_df = process_labels(paths)
 label_index = label_df.groupby(label_df.frame).cumcount()
 label_df.index = pd.MultiIndex.from_arrays([label_df.frame, label_index], names=["frame", "label"])
 label_df.sort_index(inplace=True)
 
-do_img = True
+do_img = False
 do_labels = True
 new_labels = []    
 
@@ -126,5 +149,4 @@ new_label_df.index = pd.MultiIndex.from_arrays([new_label_df.frame, label_index]
 new_label_df.sort_index(inplace=True)
 if do_labels:
     new_label_df.to_hdf(labels_path + "crop_labels.hdf5", key="df", index=False)
-    import pdb; pdb.set_trace()
 print(datetime.now() - startTime)

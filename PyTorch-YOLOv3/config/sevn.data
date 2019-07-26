@@ -1,0 +1,4 @@
+classes=3 
+train=data/sevn/train.txt
+valid=data/sevn/valid.txt
+names=data/sevn/classes.names

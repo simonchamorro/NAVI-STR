@@ -1,8 +1,8 @@
 import os
 
-labels_path = './data/sevn/labels/'
-path = "./data/sevn/images/"
-custom_path = "./data/sevn/"
+labels_path = './PyTorch-YOLOv3/data/sevn/labels/'
+path = "./PyTorch-YOLOv3/data/sevn/images/"
+custom_path = "./PyTorch-YOLOv3/data/sevn/"
 
 total_frames = len(os.listdir(labels_path))
 frames = [path.split('.')[0] for path in os.listdir(labels_path)]

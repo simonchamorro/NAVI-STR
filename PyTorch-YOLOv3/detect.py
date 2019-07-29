@@ -9,6 +9,7 @@ import sys
 import time
 import datetime
 import argparse
+import cv2
 
 from PIL import Image
 
@@ -69,6 +70,7 @@ if __name__ == "__main__":
     print("\nPerforming object detection:")
     prev_time = time.time()
     for batch_i, (img_paths, input_imgs) in enumerate(dataloader):
+        # if batch_i == 200: break
         # Configure input
         input_imgs = Variable(input_imgs.type(Tensor))
 
@@ -88,8 +90,8 @@ if __name__ == "__main__":
         img_detections.extend(detections)
 
     # Bounding-box colors
-    cmap = plt.get_cmap("tab20b")
-    colors = [cmap(i) for i in np.linspace(0, 1, 20)]
+    # cmap = plt.get_cmap("tab20b")
+    # colors = [cmap(i) for i in np.linspace(0, 1, 20)]
 
     print("\nSaving images:")
     # Iterate through images and save plot of detections
@@ -99,9 +101,9 @@ if __name__ == "__main__":
 
         # Create plot
         img = np.array(Image.open(path))
-        plt.figure()
-        fig, ax = plt.subplots(1)
-        ax.imshow(img)
+        # plt.figure()
+        # fig, ax = plt.subplots(1)
+        # ax.imshow(img)
 
         # Draw bounding boxes and labels of detections
         if detections is not None:
@@ -109,33 +111,40 @@ if __name__ == "__main__":
             detections = rescale_boxes(detections, opt.img_size, img.shape[:2])
             unique_labels = detections[:, -1].cpu().unique()
             n_cls_preds = len(unique_labels)
-            bbox_colors = random.sample(colors, n_cls_preds)
+            # bbox_colors = random.sample(colors, n_cls_preds)
+            idx = 0
             for x1, y1, x2, y2, conf, cls_conf, cls_pred in detections:
 
                 print("\t+ Label: %s, Conf: %.5f" % (classes[int(cls_pred)], cls_conf.item()))
+                # import pdb; pdb.set_trace()
+                # Save croped img
+                filename = path.split("/")[-1].split(".")[0] + f'_{idx + 1}'
+                crop = img[int(y1):int(y2), int(x1):int(x2)]
+                cv2.imwrite(f"output/{classes[int(cls_pred)]}/{filename}.png", crop)
+                idx += 1
 
-                box_w = x2 - x1
-                box_h = y2 - y1
+                # box_w = x2 - x1
+                # box_h = y2 - y1
 
-                color = bbox_colors[int(np.where(unique_labels == int(cls_pred))[0])]
-                # Create a Rectangle patch
-                bbox = patches.Rectangle((x1, y1), box_w, box_h, linewidth=2, edgecolor=color, facecolor="none")
-                # Add the bbox to the plot
-                ax.add_patch(bbox)
-                # Add label
-                plt.text(
-                    x1,
-                    y1,
-                    s=classes[int(cls_pred)],
-                    color="white",
-                    verticalalignment="top",
-                    bbox={"color": color, "pad": 0},
-                )
+                # color = bbox_colors[int(np.where(unique_labels == int(cls_pred))[0])]
+                # # Create a Rectangle patch
+                # bbox = patches.Rectangle((x1, y1), box_w, box_h, linewidth=2, edgecolor=color, facecolor="none")
+                # # Add the bbox to the plot
+                # ax.add_patch(bbox)
+                # # Add label
+                # plt.text(
+                #     x1,
+                #     y1,
+                #     s=classes[int(cls_pred)],
+                #     color="white",
+                #     verticalalignment="top",
+                #     bbox={"color": color, "pad": 0},
+                # )
 
-        # Save generated image with detections
-        plt.axis("off")
-        plt.gca().xaxis.set_major_locator(NullLocator())
-        plt.gca().yaxis.set_major_locator(NullLocator())
-        filename = path.split("/")[-1].split(".")[0]
-        plt.savefig(f"output/{filename}.png", bbox_inches="tight", pad_inches=0.0)
-        plt.close()
+            # Save generated image with detections
+            # plt.axis("off")
+            # plt.gca().xaxis.set_major_locator(NullLocator())
+            # plt.gca().yaxis.set_major_locator(NullLocator())
+            # filename = path.split("/")[-1].split(".")[0]
+            # plt.savefig(f"output/{filename}.png", bbox_inches="tight", pad_inches=0.0)
+            # plt.close()

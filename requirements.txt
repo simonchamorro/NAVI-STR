@@ -1,5 +1,6 @@
 opencv-python
 pandas
+tqdm
 tables
 numpy
 torch>=1.0

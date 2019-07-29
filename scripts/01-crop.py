@@ -7,6 +7,7 @@ import multiprocessing as mp
 import numpy as np
 import pandas as pd
 from multiprocessing import Queue
+from tqdm import tqdm
 import xml.etree.ElementTree as et
 
 from datetime import datetime
@@ -50,13 +51,15 @@ def process_labels(paths):
             x_max = int(node.find("bndbox").find("xmax").text)
             y_min = int(node.find("bndbox").find("ymin").text) - crop_margin
             y_max = int(node.find("bndbox").find("ymax").text) - crop_margin
+            if y_min < 0 or y_max < 0: continue
+            if y_max + 1 > crop_H: continue
             labels.append((frame, obj_type, house_number, street_name, x_min, x_max, y_min, y_max))
     label_df = pd.DataFrame(labels, columns = ["frame", "obj_type", "house_number", "street_name", "x_min", "x_max", "y_min", "y_max"])
     print("num labels failed to parse: " + str(len(failed_to_parse)))
     return label_df
 
 def process(fname):
-    print("Processing: " + fname)
+    # print("Processing: " + fname)
     frame_num = fname.split(".")[0].split("_")[-1]
     if do_img:
         img = cv2.imread(panos_path + fname)
@@ -140,7 +143,7 @@ do_labels = True
 new_labels = []    
 
 fnames = [fname for fname in os.listdir(panos_path) if fname.split('.')[-1] == "png"]
-for fname in fnames:
+for fname in tqdm(fnames, desc="Processing panos"):
     process(fname)
 
 new_label_df = pd.DataFrame(new_labels, columns = ["frame", "obj_type", "house_number", "street_name", "x_min", "x_max", "y_min", "y_max"])

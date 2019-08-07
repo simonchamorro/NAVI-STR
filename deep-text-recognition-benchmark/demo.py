@@ -4,6 +4,7 @@ import argparse
 import torch
 import torch.backends.cudnn as cudnn
 import torch.utils.data
+import cv2
 
 from utils import CTCLabelConverter, AttnLabelConverter
 from dataset import RawDataset, AlignCollate
@@ -74,7 +75,8 @@ def demo(opt):
         for img_name, pred in zip(image_path_list, preds_str):
             if 'Attn' in opt.Prediction:
                 pred = pred[:pred.find('[s]')]  # prune after "end of sentence" token ([s])
-
+            img = cv2.imread(img_name)
+            cv2.imwrite(f'./output/{pred}.png', img)
             print(f'{img_name}\t{pred}')
 
 

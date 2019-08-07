@@ -14,12 +14,24 @@ Scene Text Recognition pipeline for NAVI (Navigational Assistant for the Visuall
 ## Training
 ##### YOLO
     $ cd PyTorch-YOLOv3/
-    $ python3 train.py --model_def config/yolov3-navi.cfg --data_config config/sevn.data
+    $ python3 train.py --model_def config/yolov3-navi.cfg --data_config config/sevn.data --pretrained_weights weights/darknet53.conv.74
 
 ## Testing
 ##### YOLO
     $ cd PyTorch-YOLOv3/
-    $ python detect.py --image_folder data/sevn/images --weights_path checkpoints/yolov3_ckpt_99.pth --model_def config/yolov3-navi.cfg --class_path data/sevn/classes.names
+
+To test performance:
+    $ python3 test.py --model_def config/yolov3-navi.cfg --data_config config/sevn.data --weights_path checkpoints/yolov3_ckpt_99.pth
+ 
+To get bounding boxes and crops:
+    $ python detect.py --image_folder data/sevn/test --weights_path checkpoints/yolov3_ckpt_99.pth --model_def config/yolov3-navi.cfg --class_path data/sevn/classes.names --save True
 
 ##### OCR
+    $ cd deep-text-recognition-benchmark/
+
+To test performance:
     $ CUDA_VISIBLE_DEVICES=0 python3 test.py --eval_data data/dataset --Transformation TPS --FeatureExtraction ResNet --SequenceModeling BiLSTM --Prediction Attn --saved_model pths/TPS-ResNet-BiLSTM-Attn.pth
+
+To get text predictions:
+    $ CUDA_VISIBLE_DEVICES=0 python3 demo.py --Transformation TPS --FeatureExtraction ResNet --SequenceModeling BiLSTM --Prediction Attn --image_folder data/images/ --saved_model pths/TPS-ResNet-BiLSTM-Attn.pth
+

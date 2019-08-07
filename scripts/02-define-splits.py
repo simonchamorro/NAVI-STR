@@ -1,7 +1,7 @@
 import os
 
 labels_path = './PyTorch-YOLOv3/data/sevn/labels/'
-path = "./PyTorch-YOLOv3/data/sevn/images/"
+path = "./data/sevn/images/"
 custom_path = "./PyTorch-YOLOv3/data/sevn/"
 
 total_frames = len(os.listdir(labels_path))
@@ -16,3 +16,10 @@ f.close()
 with open(f'{custom_path}valid.txt', 'w') as f:
     for frame in test:
         f.write(f"{path}{frame}.png\n")
+
+# from shutil import copyfile
+# from tqdm import tqdm
+
+# for frame in tqdm(test, desc='Copying test set:'):
+#     copyfile(f"{path}{frame}.png", f"{custom_path}test/{frame}.png")
+

@@ -31,9 +31,9 @@ def crop_text(img_path):
         crop = img[label.y_min:label.y_max, label.x_min:label.x_max]
         if 0 in crop.shape: continue 
         
-        cv2.imwrite(dest_path + out_fname, crop)
+        # cv2.imwrite(dest_path + out_fname, crop)
         paths.append(out_fname)
-        gt.append(text)
+        gt.append((text, label.obj_type))
 
 images_path = "./PyTorch-YOLOv3/data/sevn/images/"
 dest_path = "./deep-text-recognition-benchmark/"
@@ -51,9 +51,20 @@ for img_path in tqdm(images, desc="Croping images"):
 
 with open(f'{dest_path}data/gt.txt', 'w') as f:
     for idx in range(len(paths)):
-        f.write(f"{paths[idx]}\t{gt[idx]}\n")
+        f.write(f"{paths[idx]}\t{gt[idx][0]}\n")
 f.close()
 
+with open(f'{dest_path}data/house_number_gt.txt', 'w') as f:
+    for idx in range(len(paths)):
+        if gt[idx][1] == 'house_number':
+            f.write(f"{paths[idx]}\t{gt[idx][0]}\n")
+f.close()
+
+with open(f'{dest_path}data/street_sign_gt.txt', 'w') as f:
+    for idx in range(len(paths)):
+        if gt[idx][1] == 'street_sign':
+            f.write(f"{paths[idx]}\t{gt[idx][0]}\n")
+f.close()
 
 
 

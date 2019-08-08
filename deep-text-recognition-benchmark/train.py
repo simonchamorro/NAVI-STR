@@ -109,9 +109,9 @@ def train(opt):
 
     """ start training """
     start_iter = 0
-    if opt.continue_model != '':
-        start_iter = int(opt.continue_model.split('_')[-1].split('.')[0])
-        print(f'continue to train, start_iter: {start_iter}')
+    # if opt.continue_model != '':
+    #     start_iter = int(opt.continue_model.split('_')[-1].split('.')[0])
+    #     print(f'continue to train, start_iter: {start_iter}')
 
     start_time = time.time()
     best_accuracy = -1
@@ -143,7 +143,7 @@ def train(opt):
         cost.backward()
         torch.nn.utils.clip_grad_norm_(model.parameters(), opt.grad_clip)  # gradient clipping with 5 (Default)
         optimizer.step()
-
+        print(f"cost: {cost.item()}")
         loss_avg.add(cost)
 
         # validation part

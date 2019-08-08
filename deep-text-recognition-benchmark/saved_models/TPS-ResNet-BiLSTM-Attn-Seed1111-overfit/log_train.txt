@@ -1,0 +1,153 @@
+[0/300000] Loss: 3.25619 elapsed_time: 3.53565
+s888888855r5r5r5r5r5r5r5r, gt: 6566                ,   False
+5588888888888888888888888, gt: 6516                ,   False
+5555555555555555555555555, gt: 6517                ,   False
+n588888888888888888888888, gt: 7052                ,   False
+5588888888888888888888888, gt: 7036                ,   False
+[0/300000] valid loss: 3.55280 accuracy: 0.000, norm_ED: 28589.22
+best_accuracy: 0.000, best_norm_ED: 28589.22
+[0/300000] Loss: 2.99847 elapsed_time: 3.63713
+5555555555555555555555555, gt: 6566                ,   False
+5555555555555555555555555, gt: 6516                ,   False
+n5                  , gt: 6517                ,   False
+66                  , gt: 7052                ,   False
+65                  , gt: 7036                ,   False
+[0/300000] valid loss: 3.38584 accuracy: 0.000, norm_ED: 7832.16
+best_accuracy: 0.000, best_norm_ED: 7832.16
+[0/300000] Loss: 2.82901 elapsed_time: 3.47424
+5n55n5n5n5n5n5n5n5n5n5n5n, gt: 6566                ,   False
+5555555555555555555555555, gt: 6516                ,   False
+5555555555555555555555555, gt: 6517                ,   False
+66666               , gt: 7052                ,   False
+66n                 , gt: 7036                ,   False
+[0/300000] valid loss: 3.36088 accuracy: 0.000, norm_ED: 20318.00
+best_accuracy: 0.000, best_norm_ED: 20318.00
+[100/300000] Loss: 2.00373 elapsed_time: 61.85532
+676                 , gt: 6560                ,   False
+770                 , gt: 6657                ,   False
+770                 , gt: 7154                ,   False
+66a                 , gt: mozart              ,   False
+671                 , gt: 6505                ,   False
+[100/300000] valid loss: 1.66800 accuracy: 0.224, norm_ED: 2919.94
+best_accuracy: 0.224, best_norm_ED: 2919.94
+[200/300000] Loss: 1.38403 elapsed_time: 119.37639
+6700                , gt: 6707                ,   False
+6700                , gt: 6706                ,   False
+55                  , gt: 35                  ,   False
+6500                , gt: 6570                ,   False
+7000                , gt: 7001                ,   False
+[200/300000] valid loss: 1.17463 accuracy: 5.741, norm_ED: 2039.68
+best_accuracy: 5.741, best_norm_ED: 2039.68
+[300/300000] Loss: 0.89985 elapsed_time: 176.97651
+222                 , gt: 22                  ,   False
+6795                , gt: 6795                ,   True
+6815                , gt: 6615                ,   False
+6522                , gt: 6521                ,   False
+6744                , gt: 6743                ,   False
+[300/300000] valid loss: 0.86366 accuracy: 41.041, norm_ED: 1377.17
+best_accuracy: 41.041, best_norm_ED: 1377.17
+[400/300000] Loss: 0.39922 elapsed_time: 234.67705
+6802                , gt: 6802                ,   True
+35                  , gt: 35                  ,   True
+6602                , gt: 6602                ,   True
+7036                , gt: 7036                ,   True
+19                  , gt: 19                  ,   True
+[400/300000] valid loss: 0.23621 accuracy: 91.254, norm_ED: 181.68
+best_accuracy: 91.254, best_norm_ED: 181.68
+[500/300000] Loss: 0.25844 elapsed_time: 292.18852
+6707                , gt: 6707                ,   True
+7020                , gt: 7020                ,   True
+6779                , gt: 6779                ,   True
+18                  , gt: 18                  ,   True
+6650                , gt: 6650                ,   True
+[500/300000] valid loss: 0.17234 accuracy: 95.358, norm_ED: 118.70
+best_accuracy: 95.358, best_norm_ED: 118.70
+[600/300000] Loss: 0.13336 elapsed_time: 349.67294
+69                  , gt: 69                  ,   True
+69                  , gt: 69                  ,   True
+6575                , gt: 6575                ,   True
+6725                , gt: 6725                ,   True
+6711                , gt: 6711                ,   True
+[600/300000] valid loss: 0.09968 accuracy: 96.681, norm_ED: 52.63
+best_accuracy: 96.681, best_norm_ED: 52.63
+[700/300000] Loss: 0.16247 elapsed_time: 407.19222
+35                  , gt: 35                  ,   True
+6540                , gt: 6540                ,   True
+7114                , gt: 7114                ,   True
+90                  , gt: 90                  ,   True
+6596                , gt: 6596                ,   True
+[700/300000] valid loss: 0.17621 accuracy: 93.855, norm_ED: 139.01
+best_accuracy: 96.681, best_norm_ED: 52.63
+[800/300000] Loss: 0.08421 elapsed_time: 462.62400
+7024                , gt: 7024                ,   True
+6712                , gt: 6712                ,   True
+16                  , gt: 95                  ,   False
+6887                , gt: 6597                ,   False
+7062                , gt: 7052                ,   False
+[800/300000] valid loss: 0.56672 accuracy: 54.452, norm_ED: 822.18
+best_accuracy: 96.681, best_norm_ED: 52.63
+[900/300000] Loss: 0.06444 elapsed_time: 517.92532
+6598                , gt: 6598                ,   True
+7070                , gt: 7070                ,   True
+6842                , gt: 6862                ,   False
+6598                , gt: 6598                ,   True
+6733                , gt: 6733                ,   True
+[900/300000] valid loss: 0.12904 accuracy: 89.639, norm_ED: 187.71
+best_accuracy: 96.681, best_norm_ED: 52.63
+[1000/300000] Loss: 0.02267 elapsed_time: 573.27412
+6838                , gt: 6838                ,   True
+6799                , gt: 6799                ,   True
+7148                , gt: 7148                ,   True
+90                  , gt: 90                  ,   True
+6741                , gt: 6741                ,   True
+[1000/300000] valid loss: 0.01337 accuracy: 99.821, norm_ED: 3.70
+best_accuracy: 99.821, best_norm_ED: 3.70
+[1100/300000] Loss: 0.07214 elapsed_time: 630.85130
+95                  , gt: 95                  ,   True
+6730                , gt: 6730                ,   True
+6552                , gt: 6552                ,   True
+6852                , gt: 6852                ,   True
+6869                , gt: 6869                ,   True
+[1100/300000] valid loss: 0.01541 accuracy: 99.753, norm_ED: 5.19
+best_accuracy: 99.821, best_norm_ED: 3.70
+[1200/300000] Loss: 0.00949 elapsed_time: 686.00106
+6537                , gt: 6537                ,   True
+6876                , gt: 6876                ,   True
+80                  , gt: 80                  ,   True
+7034                , gt: 7034                ,   True
+6712                , gt: 6712                ,   True
+[1200/300000] valid loss: 0.00770 accuracy: 99.843, norm_ED: 2.27
+best_accuracy: 99.843, best_norm_ED: 2.27
+[1300/300000] Loss: 0.00667 elapsed_time: 743.93011
+6722                , gt: 6722                ,   True
+6656                , gt: 6656                ,   True
+6852                , gt: 6852                ,   True
+6666                , gt: 6666                ,   True
+7052                , gt: 7052                ,   True
+[1300/300000] valid loss: 0.00466 accuracy: 99.955, norm_ED: 0.53
+best_accuracy: 99.955, best_norm_ED: 0.53
+[1400/300000] Loss: 0.00405 elapsed_time: 801.54419
+6632                , gt: 6632                ,   True
+6519                , gt: 6519                ,   True
+6876                , gt: 6876                ,   True
+6654                , gt: 6654                ,   True
+6828                , gt: 6828                ,   True
+[1400/300000] valid loss: 0.00337 accuracy: 99.978, norm_ED: 0.20
+best_accuracy: 99.978, best_norm_ED: 0.20
+[1500/300000] Loss: 0.00325 elapsed_time: 859.21264
+6832                , gt: 6832                ,   True
+6556                , gt: 6556                ,   True
+61                  , gt: 61                  ,   True
+clark               , gt: clark               ,   True
+6765                , gt: 6765                ,   True
+[1500/300000] valid loss: 0.00262 accuracy: 100.000, norm_ED: 0.00
+best_accuracy: 100.000, best_norm_ED: 0.00
+[0/300000] Loss: 0.00547 elapsed_time: 3.41686
+[0/300000] Loss: 0.00202 elapsed_time: 3.54374
+7021                , gt: 7021                ,   True
+6879                , gt: 6879                ,   True
+6817                , gt: 6817                ,   True
+6763                , gt: 6763                ,   True
+sainturbain         , gt: sainturbain         ,   True
+[0/300000] valid loss: 0.00563 accuracy: 100.000, norm_ED: 0.00
+best_accuracy: 100.000, best_norm_ED: 0.00

@@ -16,6 +16,10 @@ Scene Text Recognition pipeline for NAVI (Navigational Assistant for the Visuall
     $ cd PyTorch-YOLOv3/
     $ python3 train.py --model_def config/yolov3-navi.cfg --data_config config/sevn.data --pretrained_weights weights/darknet53.conv.74
 
+##### Starnet OCR	
+    $ cd deep-text-recognition-benchmark/
+    $ CUDA_VISIBLE_DEVICES=1 python3 train.py --train_data data/train --valid_data data/valid  --batch_ratio 1.0 --Transformation TPS --FeatureExtraction ResNet --SequenceModeling BiLSTM --Prediction Attn --continue_model SAVED_MODEL --valInterval 1 --select_data data
+
 ## Testing
 ##### YOLO
     $ cd PyTorch-YOLOv3/

@@ -8,4 +8,5 @@ PyTorch-YOLOv3/weights/darknet53.conv.74
 PyTorch-YOLOv3/data/coco
 deep-text-recognition-benchmark/pths
 deep-text-recognition-benchmark/result
+deep-text-recognition-benchmark/saved_models
 

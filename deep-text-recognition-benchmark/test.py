@@ -2,12 +2,14 @@ import os
 import time
 import string
 import argparse
+import random
 
 import torch
 import torch.backends.cudnn as cudnn
 import torch.utils.data
 import torchvision
 import numpy as np
+import pandas as pd
 from nltk.metrics.distance import edit_distance
 
 from utils import CTCLabelConverter, AttnLabelConverter, Averager
@@ -66,7 +68,7 @@ def benchmark_all_eval(model, criterion, converter, opt, calculate_infer_time=Fa
     return None
 
 
-def validation(model, criterion, evaluation_loader, eval_data, converter, opt):
+def validation(model, criterion, evaluation_loader, converter, opt, eval_data=None):
     """ validation or evaluation """
     for p in model.parameters():
         p.requires_grad = False
@@ -76,6 +78,14 @@ def validation(model, criterion, evaluation_loader, eval_data, converter, opt):
     length_of_data = 0
     infer_time = 0
     valid_loss_avg = Averager()
+    if opt.ed_condition:
+        meta_df = pd.read_hdf("meta.hdf5", key='df', mode='r')
+        house_numbers = meta_df['house_number'].dropna().unique().tolist()
+        street_names = meta_df['street_name'].dropna().unique().tolist()
+        text = []
+        text.extend(house_numbers)
+        text.extend(street_names)
+
     for i, (image_tensors, labels) in enumerate(evaluation_loader):
         batch_size = image_tensors.size(0)
         length_of_data = length_of_data + batch_size
@@ -125,11 +135,26 @@ def validation(model, criterion, evaluation_loader, eval_data, converter, opt):
                 pred = pred[:pred.find('[s]')]  # prune after "end of sentence" token ([s])
                 gt = gt[:gt.find('[s]')]
             
+            if opt.ed_condition:
+                random.shuffle(text)
+        
+                context = text[:100]
+                if gt not in context:
+                    context[0] = gt
+                
+                distances = {}
+                for word in context:
+                    d = edit_distance(word, pred)
+                    distances[word] = d
+                pred = min(distances, key=distances.get) 
+
             if pred == gt:
                 n_correct += 1
-                eval_data[i * batch_size + j][0].save(f"./result/{opt.experiment_name}/correct/sample_{i * batch_size + j}_pred_{pred}.png")
+                if eval_data:
+                    eval_data[i * batch_size + j][0].save(f"./result/{opt.experiment_name}/correct/sample_{i * batch_size + j}_pred_{pred}.png")
             else:
-                eval_data[i * batch_size + j][0].save(f"./result/{opt.experiment_name}/incorrect/sample_{i * batch_size + j}_pred_{pred}.png")
+                if eval_data:
+                    eval_data[i * batch_size + j][0].save(f"./result/{opt.experiment_name}/incorrect/sample_{i * batch_size + j}_pred_{pred}.png")
 
             norm_ED += edit_distance(pred, gt) / len(gt)
             j += 1
@@ -187,7 +212,7 @@ def test(opt):
             collate_fn=AlignCollate_evaluation, pin_memory=True)
 
         _, accuracy_by_best_model, _, _, _, _, _ = validation(
-            model, criterion, evaluation_loader, eval_data, converter, opt)
+            model, criterion, evaluation_loader, converter, opt, eval_data)
 
         print(accuracy_by_best_model)
         with open('./result/{0}/log_evaluation.txt'.format(opt.experiment_name), 'a') as log:
@@ -219,6 +244,7 @@ if __name__ == '__main__':
     parser.add_argument('--output_channel', type=int, default=512,
                         help='the number of output channel of Feature extractor')
     parser.add_argument('--hidden_size', type=int, default=256, help='the size of the LSTM hidden state')
+    parser.add_argument('--ed_condition', action="store_true", help='dont use comet')
 
     opt = parser.parse_args()
 

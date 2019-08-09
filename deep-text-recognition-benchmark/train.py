@@ -16,6 +16,8 @@ import torch.nn.init as init
 import torch.optim as optim
 import torch.utils.data
 import numpy as np
+import pandas as pd
+import random
 
 from utils import CTCLabelConverter, AttnLabelConverter, Averager
 from dataset import hierarchical_dataset, AlignCollate, Batch_Balanced_Dataset
@@ -37,7 +39,7 @@ def train(opt):
         num_workers=int(opt.workers),
         collate_fn=AlignCollate_valid, pin_memory=True)
     print('-' * 80)
-
+        
     """ model configuration """
     if 'CTC' in opt.Prediction:
         converter = CTCLabelConverter(opt.character)
@@ -100,11 +102,10 @@ def train(opt):
         optimizer = optim.Adadelta(filtered_parameters, lr=opt.lr, rho=opt.rho, eps=opt.eps)
     print("Optimizer:")
     print(optimizer)
-
     """ final options """
 
     # Create comet experiment
-    if comet_loaded and len(opt.comet) > 0:
+    if comet_loaded and len(opt.comet) > 0 and not opt.no_comet:
         comet_credentials = opt.comet.split("/")
         experiment = Experiment(
             api_key=comet_credentials[2],
@@ -141,7 +142,6 @@ def train(opt):
         # train part
         for p in model.parameters():
             p.requires_grad = True
-
         image_tensors, labels = train_dataset.get_batch()
         image = image_tensors.cuda()
         text, length = converter.encode(labels)
@@ -274,6 +274,8 @@ if __name__ == '__main__':
                         help='the number of output channel of Feature extractor')
     parser.add_argument('--hidden_size', type=int, default=256, help='the size of the LSTM hidden state')
     parser.add_argument('--comet', type=str, default='mweiss17/navi-str/UcVgpp0wPaprHG4w8MFVMgq7j', help='Comet logging info')
+    parser.add_argument('--no_comet', action="store_true", help='dont use comet')
+    parser.add_argument('--ed_condition', action="store_true", help='dont use comet')
 
     opt = parser.parse_args()
 

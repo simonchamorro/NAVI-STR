@@ -3,28 +3,64 @@ from tqdm import tqdm
 from PIL import Image
 import random
 import subprocess
+from collections import defaultdict
 
 
 seed = 0
 random.seed(seed)
 pkg_path = "./deep-text-recognition-benchmark/"
-lines = []
 train_lines = []
 valid_lines = []
 test_lines = []
+train_hn = []
+valid_hn = []
+test_hn = []
+train_ss = []
+valid_ss = []
+test_ss = []
 
-for label_class in ['house_number', 'street_sign']:
-	with open(f'{pkg_path}data/{label_class}_gt.txt', 'r') as f:
-		for line in f:
-			lines.append(line)
+house_numbers = defaultdict(list)
+street_signs = defaultdict(list)
 
-	num_train = int(0.8 * len(lines))
-	num_valid = int(0.1 * len(lines))
-	num_test = int(0.1 * len(lines))
+with open(f'{pkg_path}data/house_number_gt.txt', 'r') as f:
+	for line in f:
+		gt = line.split('\t')[-1].replace('\n', '')
+		house_numbers[gt].append(line)
 
-	train_lines.extend(lines[:num_train])
-	valid_lines.extend(lines[num_train:num_train + num_valid])
-	test_lines.extend(lines[num_train + num_valid:])
+with open(f'{pkg_path}data/street_sign_gt.txt', 'r') as f:
+	for line in f:
+		gt = line.split('\t')[-1].replace('\n', '')
+		street_signs[gt].append(line)
+
+gt_house_numbers = [x for x in house_numbers.keys()]
+gt_street_signs = [x for x in street_signs.keys()]
+
+num_train_hn = int(0.8 * len(gt_house_numbers))
+num_valid_hn = int(0.1 * len(gt_house_numbers))
+num_test_hn = int(0.1 * len(gt_house_numbers))
+
+num_train_ss = int(0.8 * len(gt_street_signs))
+num_valid_ss = int(0.1 * len(gt_street_signs))
+num_test_ss = int(0.1 * len(gt_street_signs))
+
+train_hn.extend(gt_house_numbers[:num_train_hn])
+valid_hn.extend(gt_house_numbers[num_train_hn:num_train_hn + num_valid_hn])
+test_hn.extend(gt_house_numbers[num_train_hn + num_valid_hn:])
+
+train_ss.extend(gt_street_signs[:num_train_ss])
+valid_ss.extend(gt_street_signs[num_train_ss:num_train_ss + num_valid_ss])
+test_ss.extend(gt_street_signs[num_train_ss + num_valid_ss:])
+
+train_lines.extend([house_numbers[hn] for hn in train_hn])
+train_lines.extend([street_signs[ss] for ss in train_ss])
+valid_lines.extend([house_numbers[hn] for hn in valid_hn])
+valid_lines.extend([street_signs[ss] for ss in valid_ss])
+test_lines.extend([house_numbers[hn] for hn in test_hn])
+test_lines.extend([street_signs[ss] for ss in test_ss])
+
+train_lines = [item for sublist in train_lines for item in sublist]
+valid_lines = [item for sublist in valid_lines for item in sublist]
+test_lines = [item for sublist in test_lines for item in sublist]
 
 random.shuffle(train_lines)
 random.shuffle(valid_lines)

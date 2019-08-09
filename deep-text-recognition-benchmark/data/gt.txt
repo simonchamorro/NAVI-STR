@@ -504,7 +504,7 @@ data/images/jean_talon_253094.png	jean_talon
 data/images/saint_urbain_253094.png	saint_urbain
 data/images/6580_saint_laurent_114129.png	6580
 data/images/6545_saint_laurent_117087.png	6545
-data/images/saint laurent_232110.png	saint laurent
+data/images/saint_laurent_232110.png	saint_laurent
 data/images/6598_clark_012321.png	6598
 data/images/57_mozart_240054.png	57
 data/images/mozart_160278.png	mozart
@@ -831,7 +831,7 @@ data/images/6546_clark_013551.png	6546
 data/images/mozart_226034.png	mozart
 data/images/69_saint_zotique_002313.png	69
 data/images/6751_saint_laurent_171399.png	6751
-data/images/saint laurent_232122.png	saint laurent
+data/images/saint_laurent_232122.png	saint_laurent
 data/images/39_mozart_156507.png	39
 data/images/37_mozart_156507.png	37
 data/images/35_mozart_156507.png	35
@@ -1416,7 +1416,7 @@ data/images/7082_saint_urbain_256656.png	7082
 data/images/6723_clark_183285.png	6723
 data/images/saint_zotique_182538.png	saint_zotique
 data/images/clark_182538.png	clark
-data/images/saint laurent_232152.png	saint laurent
+data/images/saint_laurent_232152.png	saint_laurent
 data/images/beaubien_030597.png	beaubien
 data/images/6715_saint_laurent_170328.png	6715
 data/images/saint_zotique_075311.png	saint_zotique
@@ -2296,7 +2296,7 @@ data/images/80_jean_talon_264042.png	80
 data/images/6805_clark_094400.png	6805
 data/images/7084_clark_198843.png	7084
 data/images/6747_saint_urbain_068358.png	6747
-data/images/saint laurent_232415.png	saint laurent
+data/images/saint_laurent_232415.png	saint_laurent
 data/images/80_jean_talon_264080.png	80
 data/images/6546_saint_laurent_115040.png	6546
 data/images/7062_saint_laurent_223151.png	7062
@@ -2331,7 +2331,7 @@ data/images/60_jean_talon_270003.png	60
 data/images/7150_clark_197766.png	7150
 data/images/clark_148263.png	clark
 data/images/6869_clark_186495.png	6869
-data/images/saint laurent_232452.png	saint laurent
+data/images/saint_laurent_232452.png	saint_laurent
 data/images/6522_saint_laurent_126258.png	6522
 data/images/6723_clark_092414.png	6723
 data/images/6721_clark_092414.png	6721

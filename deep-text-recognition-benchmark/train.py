@@ -117,7 +117,8 @@ def train(opt):
     best_accuracy = -1
     best_norm_ED = 1e+6
     i = start_iter
-
+    patience = opt.patience
+    print(f"opt.patience: {patience}")
     while(True):
         # train part
         for p in model.parameters():
@@ -174,8 +175,14 @@ def train(opt):
 
                 # keep best accuracy model
                 if current_accuracy > best_accuracy:
+                    patience = opt.patience
                     best_accuracy = current_accuracy
                     torch.save(model.state_dict(), f'./saved_models/{opt.experiment_name}/best_accuracy.pth')
+                else: 
+                    patience -= 1
+                    if patience == 0:
+                        print("Early stopping.")
+                        break
                 if current_norm_ED < best_norm_ED:
                     best_norm_ED = current_norm_ED
                     torch.save(model.state_dict(), f'./saved_models/{opt.experiment_name}/best_norm_ED.pth')
@@ -203,7 +210,7 @@ if __name__ == '__main__':
     parser.add_argument('--workers', type=int, help='number of data loading workers', default=4)
     parser.add_argument('--batch_size', type=int, default=192, help='input batch size')
     parser.add_argument('--num_iter', type=int, default=300000, help='number of iterations to train for')
-    parser.add_argument('--valInterval', type=int, default=2000, help='Interval between each validation')
+    parser.add_argument('--valInterval', type=int, default=10, help='Interval between each validation')
     parser.add_argument('--continue_model', default='', help="path to model to continue training")
     parser.add_argument('--adam', action='store_true', help='Whether to use adam (default is Adadelta)')
     parser.add_argument('--lr', type=float, default=1, help='learning rate, default=1.0 for Adadelta')
@@ -211,6 +218,7 @@ if __name__ == '__main__':
     parser.add_argument('--rho', type=float, default=0.95, help='decay rate rho for Adadelta. default=0.95')
     parser.add_argument('--eps', type=float, default=1e-8, help='eps for Adadelta. default=1e-8')
     parser.add_argument('--grad_clip', type=float, default=5, help='gradient clipping value. default=5')
+    parser.add_argument('--patience', type=float, default=10, help='Patience value for early stopping.')
     """ Data processing """
     parser.add_argument('--select_data', type=str, default='MJ-ST',
                         help='select training data (default is MJ-ST, which means MJ and ST used as training data)')

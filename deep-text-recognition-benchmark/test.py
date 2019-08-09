@@ -6,6 +6,7 @@ import argparse
 import torch
 import torch.backends.cudnn as cudnn
 import torch.utils.data
+import torchvision
 import numpy as np
 from nltk.metrics.distance import edit_distance
 
@@ -26,7 +27,7 @@ def benchmark_all_eval(model, criterion, converter, opt, calculate_infer_time=Fa
         evaluation_batch_size = opt.batch_size
 
     list_accuracy = []
-    total_forward_time = 0
+    total_forward_time = 0 
     total_evaluation_data_number = 0
     total_correct_number = 0
     print('-' * 80)
@@ -65,7 +66,7 @@ def benchmark_all_eval(model, criterion, converter, opt, calculate_infer_time=Fa
     return None
 
 
-def validation(model, criterion, evaluation_loader, converter, opt):
+def validation(model, criterion, evaluation_loader, eval_data, converter, opt):
     """ validation or evaluation """
     for p in model.parameters():
         p.requires_grad = False
@@ -75,7 +76,6 @@ def validation(model, criterion, evaluation_loader, converter, opt):
     length_of_data = 0
     infer_time = 0
     valid_loss_avg = Averager()
-
     for i, (image_tensors, labels) in enumerate(evaluation_loader):
         batch_size = image_tensors.size(0)
         length_of_data = length_of_data + batch_size
@@ -119,14 +119,20 @@ def validation(model, criterion, evaluation_loader, converter, opt):
         valid_loss_avg.add(cost)
 
         # calculate accuracy.
+        j = 0
         for pred, gt in zip(preds_str, labels):
             if 'Attn' in opt.Prediction:
                 pred = pred[:pred.find('[s]')]  # prune after "end of sentence" token ([s])
                 gt = gt[:gt.find('[s]')]
-
+            
             if pred == gt:
                 n_correct += 1
+                eval_data[i * batch_size + j][0].save(f"./result/{opt.experiment_name}/correct/sample_{i * batch_size + j}_pred_{pred}.png")
+            else:
+                eval_data[i * batch_size + j][0].save(f"./result/{opt.experiment_name}/incorrect/sample_{i * batch_size + j}_pred_{pred}.png")
+
             norm_ED += edit_distance(pred, gt) / len(gt)
+            j += 1
 
     accuracy = n_correct / float(length_of_data) * 100
 
@@ -157,6 +163,8 @@ def test(opt):
 
     """ keep evaluation model and result logs """
     os.makedirs(f'./result/{opt.experiment_name}', exist_ok=True)
+    os.makedirs(f'./result/{opt.experiment_name}/correct', exist_ok=True)
+    os.makedirs(f'./result/{opt.experiment_name}/incorrect', exist_ok=True)
     os.system(f'cp {opt.saved_model} ./result/{opt.experiment_name}/')
 
     """ setup loss """
@@ -177,8 +185,9 @@ def test(opt):
             shuffle=False,
             num_workers=int(opt.workers),
             collate_fn=AlignCollate_evaluation, pin_memory=True)
+
         _, accuracy_by_best_model, _, _, _, _, _ = validation(
-            model, criterion, evaluation_loader, converter, opt)
+            model, criterion, evaluation_loader, eval_data, converter, opt)
 
         print(accuracy_by_best_model)
         with open('./result/{0}/log_evaluation.txt'.format(opt.experiment_name), 'a') as log:

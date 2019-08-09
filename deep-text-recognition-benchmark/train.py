@@ -1,3 +1,8 @@
+try:
+    from comet_ml import Experiment
+    comet_loaded = True
+except ImportError:
+    comet_loaded = False
 import os
 import sys
 import time
@@ -97,6 +102,19 @@ def train(opt):
     print(optimizer)
 
     """ final options """
+
+    # Create comet experiment
+    if comet_loaded and len(opt.comet) > 0:
+        comet_credentials = opt.comet.split("/")
+        experiment = Experiment(
+            api_key=comet_credentials[2],
+            project_name=comet_credentials[1],
+            workspace=comet_credentials[0])
+        for key, value in vars(opt).items():
+            experiment.log_parameter(key, value)
+    else:
+        experiment = None
+
     # print(opt)
     with open(f'./saved_models/{opt.experiment_name}/opt.txt', 'a') as opt_file:
         opt_log = '------------ Options -------------\n'
@@ -151,9 +169,14 @@ def train(opt):
         if i % opt.valInterval == 0:
             elapsed_time = time.time() - start_time
             print(f'[{i}/{opt.num_iter}] Loss: {loss_avg.val():0.5f} elapsed_time: {elapsed_time:0.5f}')
-            # for log
+            if experiment is not None:
+                    experiment.log_metric("Time", elapsed_time, step=i)
+
+            # for log file and comet
             with open(f'./saved_models/{opt.experiment_name}/log_train.txt', 'a') as log:
                 log.write(f'[{i}/{opt.num_iter}] Loss: {loss_avg.val():0.5f} elapsed_time: {elapsed_time:0.5f}\n')
+                if experiment is not None:
+                    experiment.log_metric("Loss", loss_avg.val(), step=i)
                 loss_avg.reset()
 
                 model.eval()
@@ -172,6 +195,10 @@ def train(opt):
                 valid_log += f' accuracy: {current_accuracy:0.3f}, norm_ED: {current_norm_ED:0.2f}'
                 print(valid_log)
                 log.write(valid_log + '\n')
+                if experiment is not None:
+                    experiment.log_metric("Valid Loss", valid_loss, step=i)
+                    experiment.log_metric("Accuracy", current_accuracy, step=i)
+                    experiment.log_metric("Norm ED", current_norm_ED, step=i)
 
                 # keep best accuracy model
                 if current_accuracy > best_accuracy:
@@ -189,6 +216,9 @@ def train(opt):
                 best_model_log = f'best_accuracy: {best_accuracy:0.3f}, best_norm_ED: {best_norm_ED:0.2f}'
                 print(best_model_log)
                 log.write(best_model_log + '\n')
+                if experiment is not None:
+                    experiment.log_metric("Best Accuracy", best_accuracy, step=i)
+                    experiment.log_metric("Best Norm ED", best_norm_ED, step=i)
 
         # save model per 1e+5 iter.
         if (i + 1) % 1e+5 == 0:
@@ -243,6 +273,7 @@ if __name__ == '__main__':
     parser.add_argument('--output_channel', type=int, default=512,
                         help='the number of output channel of Feature extractor')
     parser.add_argument('--hidden_size', type=int, default=256, help='the size of the LSTM hidden state')
+    parser.add_argument('--comet', type=str, default='mweiss17/navi-str/UcVgpp0wPaprHG4w8MFVMgq7j', help='Comet logging info')
 
     opt = parser.parse_args()
 

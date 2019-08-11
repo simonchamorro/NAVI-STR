@@ -245,6 +245,7 @@ if __name__ == '__main__':
                         help='the number of output channel of Feature extractor')
     parser.add_argument('--hidden_size', type=int, default=256, help='the size of the LSTM hidden state')
     parser.add_argument('--ed_condition', action="store_true", help='dont use comet')
+    parser.add_argument('--seed', type=int, default=0, help='random seed')
 
     opt = parser.parse_args()
 
@@ -255,5 +256,6 @@ if __name__ == '__main__':
     cudnn.benchmark = True
     cudnn.deterministic = True
     opt.num_gpu = torch.cuda.device_count()
+    random.seed(opt.seed)
 
     test(opt)

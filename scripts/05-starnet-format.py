@@ -8,7 +8,7 @@ from collections import defaultdict
 
 seed = 0
 random.seed(seed)
-pkg_path = "./deep-text-recognition-benchmark/"
+pkg_path = "./ocr/"
 train_lines = []
 valid_lines = []
 test_lines = []

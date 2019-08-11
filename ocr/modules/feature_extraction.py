@@ -54,9 +54,12 @@ class RCNN_FeatureExtractor(nn.Module):
 class ResNet_FeatureExtractor(nn.Module):
     """ FeatureExtractor of FAN (http://openaccess.thecvf.com/content_ICCV_2017/papers/Cheng_Focusing_Attention_Towards_ICCV_2017_paper.pdf) """
 
-    def __init__(self, input_channel, output_channel=512):
+    def __init__(self, input_channel, output_channel=512, cond_params=None):
         super(ResNet_FeatureExtractor, self).__init__()
-        self.ConvNet = ResNet(input_channel, output_channel, BasicBlock, [1, 2, 5, 3])
+        if cond_params:
+            self.ConvNet = ResNet(input_channel, output_channel, FiLMedResBlock, [1, 2, 5, 3], cond_params)
+        else:
+            self.ConvNet = ResNet(input_channel, output_channel, BasicBlock, [1, 2, 5, 3])
 
     def forward(self, input):
         return self.ConvNet(input)
@@ -150,9 +153,46 @@ class BasicBlock(nn.Module):
         return out
 
 
+class FiLMedResBlock(nn.Module):
+    expansion = 1
+
+    def __init__(self, inplanes, planes, stride=1, downsample=None):
+        super(FiLMedResBlock, self).__init__()
+        self.FiLM = FiLM
+        self.conv1 = self._conv3x3(inplanes, planes)
+        self.bn1 = nn.BatchNorm2d(planes)
+        self.conv2 = self._conv3x3(planes, planes)
+        self.bn2 = nn.BatchNorm2d(planes)
+        self.relu = nn.ReLU(inplace=True)
+        self.downsample = downsample
+        self.stride = stride
+
+    def _conv3x3(self, in_planes, out_planes, stride=1):
+        "3x3 convolution with padding"
+        return nn.Conv2d(in_planes, out_planes, kernel_size=3, stride=stride,
+                         padding=1, bias=False)
+
+    def forward(self, x):
+        residual = x
+
+        out = self.conv1(x)
+        out = self.bn1(out)
+        out = self.relu(out)
+
+        out = self.conv2(out)
+        out = self.bn2(out)
+
+        if self.downsample is not None:
+            residual = self.downsample(x)
+        out += residual
+        out = self.relu(out)
+
+        return out
+
+
 class ResNet(nn.Module):
 
-    def __init__(self, input_channel, output_channel, block, layers):
+    def __init__(self, input_channel, output_channel, block, layers, cond_params=None):
         super(ResNet, self).__init__()
 
         self.output_channel_block = [int(output_channel / 4), int(output_channel / 2), output_channel, output_channel]
@@ -167,24 +207,24 @@ class ResNet(nn.Module):
         self.relu = nn.ReLU(inplace=True)
 
         self.maxpool1 = nn.MaxPool2d(kernel_size=2, stride=2, padding=0)
-        self.layer1 = self._make_layer(block, self.output_channel_block[0], layers[0])
+        self.layer1 = self._make_layer(block, self.output_channel_block[0], layers[0], cond_params=cond_params)
         self.conv1 = nn.Conv2d(self.output_channel_block[0], self.output_channel_block[
                                0], kernel_size=3, stride=1, padding=1, bias=False)
         self.bn1 = nn.BatchNorm2d(self.output_channel_block[0])
 
         self.maxpool2 = nn.MaxPool2d(kernel_size=2, stride=2, padding=0)
-        self.layer2 = self._make_layer(block, self.output_channel_block[1], layers[1], stride=1)
+        self.layer2 = self._make_layer(block, self.output_channel_block[1], layers[1], stride=1, cond_params=cond_params)
         self.conv2 = nn.Conv2d(self.output_channel_block[1], self.output_channel_block[
                                1], kernel_size=3, stride=1, padding=1, bias=False)
         self.bn2 = nn.BatchNorm2d(self.output_channel_block[1])
 
         self.maxpool3 = nn.MaxPool2d(kernel_size=2, stride=(2, 1), padding=(0, 1))
-        self.layer3 = self._make_layer(block, self.output_channel_block[2], layers[2], stride=1)
+        self.layer3 = self._make_layer(block, self.output_channel_block[2], layers[2], stride=1, cond_params=cond_params)
         self.conv3 = nn.Conv2d(self.output_channel_block[2], self.output_channel_block[
                                2], kernel_size=3, stride=1, padding=1, bias=False)
         self.bn3 = nn.BatchNorm2d(self.output_channel_block[2])
 
-        self.layer4 = self._make_layer(block, self.output_channel_block[3], layers[3], stride=1)
+        self.layer4 = self._make_layer(block, self.output_channel_block[3], layers[3], stride=1, cond_params=cond_params)
         self.conv4_1 = nn.Conv2d(self.output_channel_block[3], self.output_channel_block[
                                  3], kernel_size=2, stride=(2, 1), padding=(0, 1), bias=False)
         self.bn4_1 = nn.BatchNorm2d(self.output_channel_block[3])
@@ -192,7 +232,7 @@ class ResNet(nn.Module):
                                  3], kernel_size=2, stride=1, padding=0, bias=False)
         self.bn4_2 = nn.BatchNorm2d(self.output_channel_block[3])
 
-    def _make_layer(self, block, planes, blocks, stride=1):
+    def _make_layer(self, block, planes, blocks, stride=1, cond_params=None):
         downsample = None
         if stride != 1 or self.inplanes != planes * block.expansion:
             downsample = nn.Sequential(

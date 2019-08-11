@@ -15,3 +15,6 @@ lmdb
 torchvision
 nltk
 natsort
+scipy
+editdistance
+comet_ml

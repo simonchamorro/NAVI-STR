@@ -1,3 +1,8 @@
+try:
+    from comet_ml import Experiment
+    comet_loaded = True
+except ImportError:
+    comet_loaded = False
 import os
 import sys
 import time
@@ -11,6 +16,8 @@ import torch.nn.init as init
 import torch.optim as optim
 import torch.utils.data
 import numpy as np
+import pandas as pd
+import random
 
 from utils import CTCLabelConverter, AttnLabelConverter, Averager
 from dataset import hierarchical_dataset, AlignCollate, Batch_Balanced_Dataset
@@ -32,7 +39,7 @@ def train(opt):
         num_workers=int(opt.workers),
         collate_fn=AlignCollate_valid, pin_memory=True)
     print('-' * 80)
-
+        
     """ model configuration """
     if 'CTC' in opt.Prediction:
         converter = CTCLabelConverter(opt.character)
@@ -95,8 +102,20 @@ def train(opt):
         optimizer = optim.Adadelta(filtered_parameters, lr=opt.lr, rho=opt.rho, eps=opt.eps)
     print("Optimizer:")
     print(optimizer)
-
     """ final options """
+
+    # Create comet experiment
+    if comet_loaded and len(opt.comet) > 0 and not opt.no_comet:
+        comet_credentials = opt.comet.split("/")
+        experiment = Experiment(
+            api_key=comet_credentials[2],
+            project_name=comet_credentials[1],
+            workspace=comet_credentials[0])
+        for key, value in vars(opt).items():
+            experiment.log_parameter(key, value)
+    else:
+        experiment = None
+
     # print(opt)
     with open(f'./saved_models/{opt.experiment_name}/opt.txt', 'a') as opt_file:
         opt_log = '------------ Options -------------\n'
@@ -109,20 +128,20 @@ def train(opt):
 
     """ start training """
     start_iter = 0
-    if opt.continue_model != '':
-        start_iter = int(opt.continue_model.split('_')[-1].split('.')[0])
-        print(f'continue to train, start_iter: {start_iter}')
+    # if opt.continue_model != '':
+    #     start_iter = int(opt.continue_model.split('_')[-1].split('.')[0])
+    #     print(f'continue to train, start_iter: {start_iter}')
 
     start_time = time.time()
     best_accuracy = -1
     best_norm_ED = 1e+6
     i = start_iter
-
+    patience = opt.patience
+    print(f"opt.patience: {patience}")
     while(True):
         # train part
         for p in model.parameters():
             p.requires_grad = True
-
         image_tensors, labels = train_dataset.get_batch()
         image = image_tensors.cuda()
         text, length = converter.encode(labels)
@@ -143,16 +162,21 @@ def train(opt):
         cost.backward()
         torch.nn.utils.clip_grad_norm_(model.parameters(), opt.grad_clip)  # gradient clipping with 5 (Default)
         optimizer.step()
-
+        print(f"cost: {cost.item()}")
         loss_avg.add(cost)
 
         # validation part
         if i % opt.valInterval == 0:
             elapsed_time = time.time() - start_time
             print(f'[{i}/{opt.num_iter}] Loss: {loss_avg.val():0.5f} elapsed_time: {elapsed_time:0.5f}')
-            # for log
+            if experiment is not None:
+                    experiment.log_metric("Time", elapsed_time, step=i)
+
+            # for log file and comet
             with open(f'./saved_models/{opt.experiment_name}/log_train.txt', 'a') as log:
                 log.write(f'[{i}/{opt.num_iter}] Loss: {loss_avg.val():0.5f} elapsed_time: {elapsed_time:0.5f}\n')
+                if experiment is not None:
+                    experiment.log_metric("Loss", loss_avg.val(), step=i)
                 loss_avg.reset()
 
                 model.eval()
@@ -171,17 +195,30 @@ def train(opt):
                 valid_log += f' accuracy: {current_accuracy:0.3f}, norm_ED: {current_norm_ED:0.2f}'
                 print(valid_log)
                 log.write(valid_log + '\n')
+                if experiment is not None:
+                    experiment.log_metric("Valid Loss", valid_loss, step=i)
+                    experiment.log_metric("Accuracy", current_accuracy, step=i)
+                    experiment.log_metric("Norm ED", current_norm_ED, step=i)
 
                 # keep best accuracy model
                 if current_accuracy > best_accuracy:
+                    patience = opt.patience
                     best_accuracy = current_accuracy
                     torch.save(model.state_dict(), f'./saved_models/{opt.experiment_name}/best_accuracy.pth')
+                else: 
+                    patience -= 1
+                    if patience == 0:
+                        print("Early stopping.")
+                        break
                 if current_norm_ED < best_norm_ED:
                     best_norm_ED = current_norm_ED
                     torch.save(model.state_dict(), f'./saved_models/{opt.experiment_name}/best_norm_ED.pth')
                 best_model_log = f'best_accuracy: {best_accuracy:0.3f}, best_norm_ED: {best_norm_ED:0.2f}'
                 print(best_model_log)
                 log.write(best_model_log + '\n')
+                if experiment is not None:
+                    experiment.log_metric("Best Accuracy", best_accuracy, step=i)
+                    experiment.log_metric("Best Norm ED", best_norm_ED, step=i)
 
         # save model per 1e+5 iter.
         if (i + 1) % 1e+5 == 0:
@@ -203,7 +240,7 @@ if __name__ == '__main__':
     parser.add_argument('--workers', type=int, help='number of data loading workers', default=4)
     parser.add_argument('--batch_size', type=int, default=192, help='input batch size')
     parser.add_argument('--num_iter', type=int, default=300000, help='number of iterations to train for')
-    parser.add_argument('--valInterval', type=int, default=2000, help='Interval between each validation')
+    parser.add_argument('--valInterval', type=int, default=10, help='Interval between each validation')
     parser.add_argument('--continue_model', default='', help="path to model to continue training")
     parser.add_argument('--adam', action='store_true', help='Whether to use adam (default is Adadelta)')
     parser.add_argument('--lr', type=float, default=1, help='learning rate, default=1.0 for Adadelta')
@@ -211,6 +248,7 @@ if __name__ == '__main__':
     parser.add_argument('--rho', type=float, default=0.95, help='decay rate rho for Adadelta. default=0.95')
     parser.add_argument('--eps', type=float, default=1e-8, help='eps for Adadelta. default=1e-8')
     parser.add_argument('--grad_clip', type=float, default=5, help='gradient clipping value. default=5')
+    parser.add_argument('--patience', type=float, default=10, help='Patience value for early stopping.')
     """ Data processing """
     parser.add_argument('--select_data', type=str, default='MJ-ST',
                         help='select training data (default is MJ-ST, which means MJ and ST used as training data)')
@@ -235,6 +273,9 @@ if __name__ == '__main__':
     parser.add_argument('--output_channel', type=int, default=512,
                         help='the number of output channel of Feature extractor')
     parser.add_argument('--hidden_size', type=int, default=256, help='the size of the LSTM hidden state')
+    parser.add_argument('--comet', type=str, default='mweiss17/navi-str/UcVgpp0wPaprHG4w8MFVMgq7j', help='Comet logging info')
+    parser.add_argument('--no_comet', action="store_true", help='dont use comet')
+    parser.add_argument('--ed_condition', action="store_true", help='dont use comet')
 
     opt = parser.parse_args()
 

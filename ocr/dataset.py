@@ -25,7 +25,6 @@ class Batch_Balanced_Dataset(object):
         print('-' * 80)
         print(f'dataset_root: {opt.train_data}\nopt.select_data: {opt.select_data}\nopt.batch_ratio: {opt.batch_ratio}')
         assert len(opt.select_data) == len(opt.batch_ratio)
-
         _AlignCollate = AlignCollate(imgH=opt.imgH, imgW=opt.imgW, keep_ratio_with_pad=opt.PAD)
         self.data_loader_list = []
         self.dataloader_iter_list = []
@@ -99,6 +98,8 @@ def hierarchical_dataset(root, opt, select_data='/'):
                     break
 
             if select_flag:
+                # import pdb; pdb.set_trace()
+                print(dirpath)
                 dataset = LmdbDataset(dirpath, opt)
                 print(f'sub-directory:\t/{os.path.relpath(dirpath, root)}\t num samples: {len(dataset)}')
                 dataset_list.append(dataset)

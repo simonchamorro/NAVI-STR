@@ -62,7 +62,7 @@ data/images/saint_zotique_169076.png	saint_zotique
 data/images/saint_urbain_273056.png	saint_urbain
 data/images/jean_talon_253094.png	jean_talon
 data/images/saint_urbain_253094.png	saint_urbain
-data/images/saint laurent_232110.png	saint laurent
+data/images/saint_laurent_232110.png	saint_laurent
 data/images/mozart_160278.png	mozart
 data/images/saint_urbain_002960.png	saint_urbain
 data/images/saint_laurent_224499.png	saint_laurent
@@ -119,7 +119,7 @@ data/images/mozart_244062.png	mozart
 data/images/saint_urbain_244062.png	saint_urbain
 data/images/mozart_225861.png	mozart
 data/images/mozart_226034.png	mozart
-data/images/saint laurent_232122.png	saint laurent
+data/images/saint_laurent_232122.png	saint_laurent
 data/images/saint_laurent_209639.png	saint_laurent
 data/images/saint_laurent_216716.png	saint_laurent
 data/images/saint_urbain_048108.png	saint_urbain
@@ -202,7 +202,7 @@ data/images/mozart_176276.png	mozart
 data/images/saint_laurent_216723.png	saint_laurent
 data/images/saint_zotique_182538.png	saint_zotique
 data/images/clark_182538.png	clark
-data/images/saint laurent_232152.png	saint laurent
+data/images/saint_laurent_232152.png	saint_laurent
 data/images/beaubien_030597.png	beaubien
 data/images/saint_zotique_075311.png	saint_zotique
 data/images/dante_172776.png	dante
@@ -312,13 +312,13 @@ data/images/clark_130287.png	clark
 data/images/beaubien_126743.png	beaubien
 data/images/saint_urbain_252995.png	saint_urbain
 data/images/clark_203178.png	clark
-data/images/saint laurent_232415.png	saint laurent
+data/images/saint_laurent_232415.png	saint_laurent
 data/images/mozart_159536.png	mozart
 data/images/saint_laurent_121830.png	saint_laurent
 data/images/saint_urbain_273035.png	saint_urbain
 data/images/saint_urbain_067104.png	saint_urbain
 data/images/clark_148263.png	clark
-data/images/saint laurent_232452.png	saint laurent
+data/images/saint_laurent_232452.png	saint_laurent
 data/images/saint_zotique_001518.png	saint_zotique
 data/images/saint_urbain_263904.png	saint_urbain
 data/images/saint_urbain_272757.png	saint_urbain

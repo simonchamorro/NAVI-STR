@@ -134,12 +134,12 @@ class BasicBlock(nn.Module):
                          padding=1, bias=False)
 
     def forward(self, x):
+        import pdb; pdb.set_trace()
         residual = x[0]
         cond_params=x[1]
         x = x[0]
-        
+
         out = self.conv1(x)
-        import pdb; pdb.set_trace()
         gammas1, betas1, gammas2, betas2 = cond_params.split()
         if cond_params is not None:
             out = FiLM(out, gammas1, betas1)
@@ -229,24 +229,24 @@ class ResNet(nn.Module):
         x = self.relu(x)
 
         x = self.maxpool1(x)
-        x = self.layer1(x, cond_params)
+        x = self.layer1((x, cond_params))
         x = self.conv1(x)
         x = self.bn1(x)
         x = self.relu(x)
 
         x = self.maxpool2(x)
-        x = self.layer2(x, cond_params)
+        x = self.layer2((x, cond_params))
         x = self.conv2(x)
         x = self.bn2(x)
         x = self.relu(x)
 
         x = self.maxpool3(x)
-        x = self.layer3(x, cond_params)
+        x = self.layer3((x, cond_params))
         x = self.conv3(x)
         x = self.bn3(x)
         x = self.relu(x)
 
-        x = self.layer4(x, cond_params)
+        x = self.layer4((x, cond_params))
         x = self.conv4_1(x)
         x = self.bn4_1(x)
         x = self.relu(x)

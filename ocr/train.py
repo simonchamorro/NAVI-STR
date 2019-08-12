@@ -24,8 +24,6 @@ from dataset import hierarchical_dataset, AlignCollate, Batch_Balanced_Dataset
 from model import Model
 from modules.film import FiLMGen
 from test import validation
-import gym
-import SEVN_gym
 from SEVN_gym.envs.utils import convert_street_name, convert_house_numbers
 
 def train(opt):
@@ -143,13 +141,12 @@ def train(opt):
     print(f"opt.patience: {patience}")
 
     if opt.apply_film: # TODO: delete this
-        env = gym.make("SEVN-Full-All-Shaped-v1")
         meta_df = pd.read_hdf("meta.hdf5", key='df', mode='r') # TODO: delete this
         house_numbers = meta_df['house_number'].dropna().unique().tolist()
         street_names = meta_df['street_name'].dropna().unique().tolist()
         import pdb; pdb.set_trace()
         cond_house_numbers = torch.FloatTensor([convert_house_numbers(num) for num in house_numbers[:20]])
-        cond_street_names = torch.FloatTensor([convert_street_name(name, env.all_street_names) for name in street_names[:4]])
+        cond_street_names = torch.FloatTensor([convert_street_name(name, street_names) for name in street_names[:4]])
         cond_house_numbers = cond_house_numbers.view(cond_house_numbers.size(0), -1)
         cond_street_names = cond_street_names.view(cond_street_names.size(0), -1)
         cond_text = torch.cat((cond_house_numbers, cond_street_names), 0)

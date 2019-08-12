@@ -24,7 +24,7 @@ from dataset import hierarchical_dataset, AlignCollate, Batch_Balanced_Dataset
 from model import Model
 from modules.film import FiLMGen
 from test import validation
-
+from SEVN_gym.utils import convert_street_name, convert_house_numbers
 
 def train(opt):
     """ dataset preparation """
@@ -144,10 +144,12 @@ def train(opt):
         meta_df = pd.read_hdf("meta.hdf5", key='df', mode='r') # TODO: delete this
         house_numbers = meta_df['house_number'].dropna().unique().tolist()
         street_names = meta_df['street_name'].dropna().unique().tolist()
-        text = []
         import pdb; pdb.set_trace()
-        text.extend(house_numbers[:20])
-        text.extend(street_names[:4])
+        cond_house_numbers = torch.FloatTensor([convert_house_numbers(num) for num in house_numbers[:20]])
+        cond_street_names = torch.FloatTensor([convert_street_name(name) for name in street_names[:4]])
+        cond_house_numbers = cond_house_numbers.view(cond_house_numbers.size(0), -1)
+        cond_street_names = cond_street_names.view(cond_street_names.size(0), -1)
+        cond_text = torch.cat((cond_house_numbers, cond_street_names), 0)
 
     while(True):
         # train part
@@ -168,7 +170,7 @@ def train(opt):
             cond_params = None
             import pdb; pdb.set_trace()
             if opt.apply_film:
-                cond_params = film_gen(text)
+                cond_params = film_gen(cond_text)
             preds = model(image, text, cond_params)
             target = text[:, 1:]  # without [GO] Symbol
             cost = criterion(preds.view(-1, preds.shape[-1]), target.contiguous().view(-1))

@@ -51,10 +51,10 @@ def train(opt):
     if opt.rgb:
         opt.input_channel = 3
     model = Model(opt)
+    film_gen = FiLMGen(input_dim=828, module_dim=opt.output_channel).cuda()
     print('model input parameters', opt.imgH, opt.imgW, opt.num_fiducial, opt.input_channel, opt.output_channel,
           opt.hidden_size, opt.num_class, opt.batch_max_length, opt.Transformation, opt.FeatureExtraction,
           opt.SequenceModeling, opt.Prediction)
-    film_gen = FiLMGen(input_dim=828, module_dim=opt.output_channel)
     # weight initialization
     for name, param in model.named_parameters():
         if 'localization_fc2' in name:
@@ -145,8 +145,8 @@ def train(opt):
         house_numbers = meta_df['house_number'].dropna().unique().tolist()
         street_names = meta_df['street_name'].dropna().unique().tolist()
         text = []
-        text.extend(house_numbers)
-        text.extend(street_names)
+        text.extend(house_numbers[:20])
+        text.extend(street_names[:4])
 
 
     while(True):
@@ -168,7 +168,7 @@ def train(opt):
             cond_params = None
             import pdb; pdb.set_trace()
             if opt.apply_film:
-                cond_params = film_gen(text[:100])
+                cond_params = film_gen(text)
             preds = model(image, text, cond_params)
             target = text[:, 1:]  # without [GO] Symbol
             cost = criterion(preds.view(-1, preds.shape[-1]), target.contiguous().view(-1))

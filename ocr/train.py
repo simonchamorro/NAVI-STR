@@ -24,7 +24,7 @@ from dataset import hierarchical_dataset, AlignCollate, Batch_Balanced_Dataset
 from model import Model
 from modules.film import FiLMGen
 from test import validation
-from SEVN_gym.utils import convert_street_name, convert_house_numbers
+from SEVN_gym.envs.utils import convert_street_name, convert_house_numbers
 
 def train(opt):
     """ dataset preparation """

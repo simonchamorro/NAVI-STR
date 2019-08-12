@@ -58,8 +58,8 @@ class ResNet_FeatureExtractor(nn.Module):
         super(ResNet_FeatureExtractor, self).__init__()
         self.ConvNet = ResNet(input_channel, output_channel, BasicBlock, [1, 2, 5, 3])
 
-    def forward(self, input):
-        return self.ConvNet(input)
+    def forward(self, input, cond_params):
+        return self.ConvNet(input, cond_params)
 
 
 # For Gated RCNN
@@ -160,7 +160,7 @@ class BasicBlock(nn.Module):
 
 class ResNet(nn.Module):
 
-    def __init__(self, input_channel, output_channel, block, layers, cond_params=None):
+    def __init__(self, input_channel, output_channel, block, layers):
         super(ResNet, self).__init__()
 
         self.output_channel_block = [int(output_channel / 4), int(output_channel / 2), output_channel, output_channel]
@@ -175,24 +175,24 @@ class ResNet(nn.Module):
         self.relu = nn.ReLU(inplace=True)
 
         self.maxpool1 = nn.MaxPool2d(kernel_size=2, stride=2, padding=0)
-        self.layer1 = self._make_layer(block, self.output_channel_block[0], layers[0], cond_params=cond_params)
+        self.layer1 = self._make_layer(block, self.output_channel_block[0], layers[0])
         self.conv1 = nn.Conv2d(self.output_channel_block[0], self.output_channel_block[
                                0], kernel_size=3, stride=1, padding=1, bias=False)
         self.bn1 = nn.BatchNorm2d(self.output_channel_block[0])
 
         self.maxpool2 = nn.MaxPool2d(kernel_size=2, stride=2, padding=0)
-        self.layer2 = self._make_layer(block, self.output_channel_block[1], layers[1], stride=1, cond_params=cond_params)
+        self.layer2 = self._make_layer(block, self.output_channel_block[1], layers[1], stride=1)
         self.conv2 = nn.Conv2d(self.output_channel_block[1], self.output_channel_block[
                                1], kernel_size=3, stride=1, padding=1, bias=False)
         self.bn2 = nn.BatchNorm2d(self.output_channel_block[1])
 
         self.maxpool3 = nn.MaxPool2d(kernel_size=2, stride=(2, 1), padding=(0, 1))
-        self.layer3 = self._make_layer(block, self.output_channel_block[2], layers[2], stride=1, cond_params=cond_params)
+        self.layer3 = self._make_layer(block, self.output_channel_block[2], layers[2], stride=1)
         self.conv3 = nn.Conv2d(self.output_channel_block[2], self.output_channel_block[
                                2], kernel_size=3, stride=1, padding=1, bias=False)
         self.bn3 = nn.BatchNorm2d(self.output_channel_block[2])
 
-        self.layer4 = self._make_layer(block, self.output_channel_block[3], layers[3], stride=1, cond_params=cond_params)
+        self.layer4 = self._make_layer(block, self.output_channel_block[3], layers[3], stride=1)
         self.conv4_1 = nn.Conv2d(self.output_channel_block[3], self.output_channel_block[
                                  3], kernel_size=2, stride=(2, 1), padding=(0, 1), bias=False)
         self.bn4_1 = nn.BatchNorm2d(self.output_channel_block[3])
@@ -200,7 +200,7 @@ class ResNet(nn.Module):
                                  3], kernel_size=2, stride=1, padding=0, bias=False)
         self.bn4_2 = nn.BatchNorm2d(self.output_channel_block[3])
 
-    def _make_layer(self, block, planes, blocks, stride=1, cond_params=None):
+    def _make_layer(self, block, planes, blocks, stride=1):
         downsample = None
         if stride != 1 or self.inplanes != planes * block.expansion:
             downsample = nn.Sequential(
@@ -210,16 +210,10 @@ class ResNet(nn.Module):
             )
 
         layers = []
-        if cond_params is not None:
-            layers.append(block(self.inplanes, planes, stride, downsample, cond_params))
-            self.inplanes = planes * block.expansion
-            for i in range(1, blocks):
-                layers.append(block(self.inplanes, planes))
-        else:
-            layers.append(block(self.inplanes, planes, stride, downsample))
-            self.inplanes = planes * block.expansion
-            for i in range(1, blocks):
-                layers.append(block(self.inplanes, planes))
+        layers.append(block(self.inplanes, planes, stride, downsample))
+        self.inplanes = planes * block.expansion
+        for i in range(1, blocks):
+            layers.append(block(self.inplanes, planes))
         return nn.Sequential(*layers)
 
     def forward(self, x, cond_params=None):

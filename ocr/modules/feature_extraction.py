@@ -222,7 +222,8 @@ class ResNet(nn.Module):
                 layers.append(block(self.inplanes, planes))
         return nn.Sequential(*layers)
 
-    def forward(self, x):
+    def forward(self, x, cond_params=None):
+        import pdb; pdb.set_trace()
         x = self.conv0_1(x)
         x = self.bn0_1(x)
         x = self.relu(x)
@@ -231,24 +232,24 @@ class ResNet(nn.Module):
         x = self.relu(x)
 
         x = self.maxpool1(x)
-        x = self.layer1(x)
+        x = self.layer1(x, cond_params)
         x = self.conv1(x)
         x = self.bn1(x)
         x = self.relu(x)
 
         x = self.maxpool2(x)
-        x = self.layer2(x)
+        x = self.layer2(x, cond_params)
         x = self.conv2(x)
         x = self.bn2(x)
         x = self.relu(x)
 
         x = self.maxpool3(x)
-        x = self.layer3(x)
+        x = self.layer3(x, cond_params)
         x = self.conv3(x)
         x = self.bn3(x)
         x = self.relu(x)
 
-        x = self.layer4(x)
+        x = self.layer4(x, cond_params)
         x = self.conv4_1(x)
         x = self.bn4_1(x)
         x = self.relu(x)

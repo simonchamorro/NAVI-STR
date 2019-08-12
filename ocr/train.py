@@ -51,7 +51,7 @@ def train(opt):
     if opt.rgb:
         opt.input_channel = 3
     model = Model(opt)
-    film_gen = FiLMGen(input_dim=848, module_dim=opt.output_channel).cuda()
+    film_gen = FiLMGen(input_dim=844, module_dim=opt.output_channel).cuda()
     print('model input parameters', opt.imgH, opt.imgW, opt.num_fiducial, opt.input_channel, opt.output_channel,
           opt.hidden_size, opt.num_class, opt.batch_max_length, opt.Transformation, opt.FeatureExtraction,
           opt.SequenceModeling, opt.Prediction)

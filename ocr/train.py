@@ -40,7 +40,7 @@ def train(opt):
         num_workers=int(opt.workers),
         collate_fn=AlignCollate_valid, pin_memory=True)
     print('-' * 80)
-        
+
     """ model configuration """
     if 'CTC' in opt.Prediction:
         converter = CTCLabelConverter(opt.character)
@@ -69,7 +69,6 @@ def train(opt):
             if 'weight' in name:
                 param.data.fill_(1)
             continue
-    import pdb; pdb.set_trace()
 
     # data parallel for multi-GPU
     model = torch.nn.DataParallel(model).cuda()
@@ -221,7 +220,7 @@ def train(opt):
                     patience = opt.patience
                     best_accuracy = current_accuracy
                     torch.save(model.state_dict(), f'./saved_models/{opt.experiment_name}/best_accuracy.pth')
-                else: 
+                else:
                     patience -= 1
                     if patience == 0:
                         print("Early stopping.")

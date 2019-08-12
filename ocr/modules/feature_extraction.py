@@ -54,12 +54,9 @@ class RCNN_FeatureExtractor(nn.Module):
 class ResNet_FeatureExtractor(nn.Module):
     """ FeatureExtractor of FAN (http://openaccess.thecvf.com/content_ICCV_2017/papers/Cheng_Focusing_Attention_Towards_ICCV_2017_paper.pdf) """
 
-    def __init__(self, input_channel, output_channel=512, cond_params=None):
+    def __init__(self, input_channel, output_channel=512):
         super(ResNet_FeatureExtractor, self).__init__()
-        if cond_params:
-            self.ConvNet = ResNet(input_channel, output_channel, FiLMedResBlock, [1, 2, 5, 3], cond_params)
-        else:
-            self.ConvNet = ResNet(input_channel, output_channel, BasicBlock, [1, 2, 5, 3])
+        self.ConvNet = ResNet(input_channel, output_channel, BasicBlock, [1, 2, 5, 3])
 
     def forward(self, input):
         return self.ConvNet(input)
@@ -135,51 +132,23 @@ class BasicBlock(nn.Module):
         return nn.Conv2d(in_planes, out_planes, kernel_size=3, stride=stride,
                          padding=1, bias=False)
 
-    def forward(self, x):
+    def forward(self, x, cond_params=None):
         residual = x
 
         out = self.conv1(x)
-        out = self.bn1(out)
-        out = self.relu(out)
-
-        out = self.conv2(out)
-        out = self.bn2(out)
-
-        if self.downsample is not None:
-            residual = self.downsample(x)
-        out += residual
-        out = self.relu(out)
-
-        return out
-
-
-class FiLMedResBlock(nn.Module):
-    expansion = 1
-
-    def __init__(self, inplanes, planes, stride=1, downsample=None, cond_params=None):
-        super(FiLMedResBlock, self).__init__()
-        self.conv1 = self._conv3x3(inplanes, planes)
-        self.bn1 = FiLM
-        self.conv2 = self._conv3x3(planes, planes)
-        self.bn2 = FiLM
-        self.relu = nn.ReLU(inplace=True)
-        self.downsample = downsample
-        self.stride = stride
-
-    def _conv3x3(self, in_planes, out_planes, stride=1):
-        "3x3 convolution with padding"
-        return nn.Conv2d(in_planes, out_planes, kernel_size=3, stride=stride,
-                         padding=1, bias=False)
-
-    def forward(self, x, cond_params):
-        residual = x
         import pdb; pdb.set_trace()
         gammas1, betas1, gammas2, betas2 = cond_params.split()
-        out = self.conv1(x)
-        out = self.bn1(out, gammas1, betas1)
+        if cond_params:
+            out = FiLM(out, gammas1, betas1)
+        else:
+            out = self.bn1(out)
         out = self.relu(out)
+
         out = self.conv2(out)
-        out = self.bn2(out, gammas2, betas2)
+        if cond_params:
+            out = FiLM(out, gammas2, betas2)
+        else:
+            out = self.bn2(out)
 
         if self.downsample is not None:
             residual = self.downsample(x)
@@ -239,7 +208,7 @@ class ResNet(nn.Module):
                           kernel_size=1, stride=stride, bias=False),
                 nn.BatchNorm2d(planes * block.expansion),
             )
-        
+
         layers = []
         if cond_params:
             layers.append(block(self.inplanes, planes, stride, downsample, cond_params))

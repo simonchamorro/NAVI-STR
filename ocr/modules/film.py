@@ -21,7 +21,6 @@ class FiLMGen(nn.Module):
         )
 
     def forward(self, x):
-        x = x.view(x.size(0), -1)
         x = self.layers(x)
         return x
 

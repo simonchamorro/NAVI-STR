@@ -13,11 +13,11 @@ class FiLMGen(nn.Module):
         self.module_dim = module_dim
         self.cond_feat_size = 2048 * 16 * 50 #2 * self.module_dim * self.module_num_layers
         self.layers = nn.Sequential(
-            nn.Linear(input_dim, 10000),
+            nn.Linear(input_dim, 1000),
             nn.ReLU(),
-            nn.Linear(10000, 10000),
+            nn.Linear(1000, 1000),
             nn.ReLU(),
-            nn.Linear(10000, self.cond_feat_size)
+            nn.Linear(1000, self.cond_feat_size)
         )
 
     def forward(self, x):

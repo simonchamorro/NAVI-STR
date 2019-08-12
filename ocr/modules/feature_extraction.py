@@ -133,7 +133,7 @@ class BasicBlock(nn.Module):
         return nn.Conv2d(in_planes, out_planes, kernel_size=3, stride=stride,
                          padding=1, bias=False)
 
-    def forward(self, x, cond_params):
+    def forward(self, x, cond_params=None):
         residual = x
 
         out = self.conv1(x)

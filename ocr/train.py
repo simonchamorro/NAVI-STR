@@ -171,10 +171,9 @@ def train(opt):
 
         else:
             cond_params = None
-            import pdb; pdb.set_trace()
             if opt.apply_film:
                 cond_params = film_gen(cond_text)
-            preds = model(image, text, cond_params)
+            preds = model(image, cond_params)
             target = text[:, 1:]  # without [GO] Symbol
             cost = criterion(preds.view(-1, preds.shape[-1]), target.contiguous().view(-1))
 

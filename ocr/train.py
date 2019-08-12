@@ -51,7 +51,7 @@ def train(opt):
     if opt.rgb:
         opt.input_channel = 3
     model = Model(opt)
-    film_gen = FiLMGen(input_dim=828, module_dim=opt.output_channel).cuda()
+    film_gen = FiLMGen(input_dim=848, module_dim=opt.output_channel).cuda()
     print('model input parameters', opt.imgH, opt.imgW, opt.num_fiducial, opt.input_channel, opt.output_channel,
           opt.hidden_size, opt.num_class, opt.batch_max_length, opt.Transformation, opt.FeatureExtraction,
           opt.SequenceModeling, opt.Prediction)
@@ -152,6 +152,7 @@ def train(opt):
         cond_house_numbers = cond_house_numbers.view(-1)
         cond_street_names = cond_street_names.view(-1)
         cond_text = torch.cat((cond_house_numbers, cond_street_names), 0)
+        cond_text = cond_text.cuda()
 
     while(True):
         # train part

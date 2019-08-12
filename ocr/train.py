@@ -22,7 +22,7 @@ import random
 from utils import CTCLabelConverter, AttnLabelConverter, Averager
 from dataset import hierarchical_dataset, AlignCollate, Batch_Balanced_Dataset
 from model import Model
-from modules.film_gen import FiLMGen
+from modules.film import FiLMGen
 from test import validation
 
 
@@ -54,7 +54,6 @@ def train(opt):
     print('model input parameters', opt.imgH, opt.imgW, opt.num_fiducial, opt.input_channel, opt.output_channel,
           opt.hidden_size, opt.num_class, opt.batch_max_length, opt.Transformation, opt.FeatureExtraction,
           opt.SequenceModeling, opt.Prediction)
-    import pdb; pdb.set_trace()
     film_gen = FiLMGen(input_dim=828, module_dim=opt.output_channel)
     # weight initialization
     for name, param in model.named_parameters():
@@ -70,6 +69,7 @@ def train(opt):
             if 'weight' in name:
                 param.data.fill_(1)
             continue
+    import pdb; pdb.set_trace()
 
     # data parallel for multi-GPU
     model = torch.nn.DataParallel(model).cuda()
@@ -141,7 +141,7 @@ def train(opt):
     patience = opt.patience
     print(f"opt.patience: {patience}")
 
-    if opt.ApplyFilm: # TODO: delete this
+    if opt.apply_film: # TODO: delete this
         meta_df = pd.read_hdf("meta.hdf5", key='df', mode='r') # TODO: delete this
         house_numbers = meta_df['house_number'].dropna().unique().tolist()
         street_names = meta_df['street_name'].dropna().unique().tolist()
@@ -167,7 +167,8 @@ def train(opt):
 
         else:
             cond_params = None
-            if opt.ApplyFilm:
+            import pdb; pdb.set_trace()
+            if opt.apply_film:
                 cond_params = film_gen(text[:100])
             preds = model(image, text, cond_params)
             target = text[:, 1:]  # without [GO] Symbol
@@ -291,7 +292,7 @@ if __name__ == '__main__':
     parser.add_argument('--comet', type=str, default='mweiss17/navi-str/UcVgpp0wPaprHG4w8MFVMgq7j', help='Comet logging info')
     parser.add_argument('--no_comet', action="store_true", help='dont use comet')
     parser.add_argument('--ed_condition', action="store_true", help='dont use comet')
-    parser.add_argument('--ApplyFilm', action="store_true", help='dont use comet')
+    parser.add_argument('--apply_film', action="store_true", help='Apply film to the')
 
     opt = parser.parse_args()
 

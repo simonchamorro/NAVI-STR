@@ -1,6 +1,6 @@
 import torch.nn as nn
 import torch.nn.functional as F
-
+from modules.film import FiLM
 
 class VGG_FeatureExtractor(nn.Module):
     """ FeatureExtractor of CRNN (https://arxiv.org/pdf/1507.05717.pdf) """
@@ -156,13 +156,12 @@ class BasicBlock(nn.Module):
 class FiLMedResBlock(nn.Module):
     expansion = 1
 
-    def __init__(self, inplanes, planes, stride=1, downsample=None):
+    def __init__(self, inplanes, planes, stride=1, downsample=None, cond_params=None):
         super(FiLMedResBlock, self).__init__()
-        self.FiLM = FiLM
         self.conv1 = self._conv3x3(inplanes, planes)
-        self.bn1 = nn.BatchNorm2d(planes)
+        self.bn1 = FiLM
         self.conv2 = self._conv3x3(planes, planes)
-        self.bn2 = nn.BatchNorm2d(planes)
+        self.bn2 = FiLM
         self.relu = nn.ReLU(inplace=True)
         self.downsample = downsample
         self.stride = stride
@@ -172,15 +171,15 @@ class FiLMedResBlock(nn.Module):
         return nn.Conv2d(in_planes, out_planes, kernel_size=3, stride=stride,
                          padding=1, bias=False)
 
-    def forward(self, x):
+    def forward(self, x, cond_params):
         residual = x
-
+        import pdb; pdb.set_trace()
+        gammas1, betas1, gammas2, betas2 = cond_params.split()
         out = self.conv1(x)
-        out = self.bn1(out)
+        out = self.bn1(out, gammas1, betas1)
         out = self.relu(out)
-
         out = self.conv2(out)
-        out = self.bn2(out)
+        out = self.bn2(out, gammas2, betas2)
 
         if self.downsample is not None:
             residual = self.downsample(x)
@@ -240,13 +239,18 @@ class ResNet(nn.Module):
                           kernel_size=1, stride=stride, bias=False),
                 nn.BatchNorm2d(planes * block.expansion),
             )
-
+        
         layers = []
-        layers.append(block(self.inplanes, planes, stride, downsample))
-        self.inplanes = planes * block.expansion
-        for i in range(1, blocks):
-            layers.append(block(self.inplanes, planes))
-
+        if cond_params:
+            layers.append(block(self.inplanes, planes, stride, downsample, cond_params))
+            self.inplanes = planes * block.expansion
+            for i in range(1, blocks):
+                layers.append(block(self.inplanes, planes))
+        else:
+            layers.append(block(self.inplanes, planes, stride, downsample))
+            self.inplanes = planes * block.expansion
+            for i in range(1, blocks):
+                layers.append(block(self.inplanes, planes))
         return nn.Sequential(*layers)
 
     def forward(self, x):

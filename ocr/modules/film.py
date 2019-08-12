@@ -17,7 +17,7 @@ class FiLMGen(nn.Module):
             nn.ReLU(),
             nn.Linear(10000, 10000),
             nn.ReLU(),
-            nn.Linear(10000, cond_feat_size)
+            nn.Linear(10000, self.cond_feat_size)
         )
 
     def forward(self, x):

@@ -145,9 +145,9 @@ def train(opt):
         house_numbers = meta_df['house_number'].dropna().unique().tolist()
         street_names = meta_df['street_name'].dropna().unique().tolist()
         text = []
+        import pdb; pdb.set_trace()
         text.extend(house_numbers[:20])
         text.extend(street_names[:4])
-
 
     while(True):
         # train part

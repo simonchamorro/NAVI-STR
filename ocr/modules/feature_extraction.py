@@ -133,9 +133,11 @@ class BasicBlock(nn.Module):
         return nn.Conv2d(in_planes, out_planes, kernel_size=3, stride=stride,
                          padding=1, bias=False)
 
-    def forward(self, x, cond_params=None):
-        residual = x
-
+    def forward(self, x):
+        residual = x[0]
+        cond_params=x[1]
+        x = x[0]
+        
         out = self.conv1(x)
         import pdb; pdb.set_trace()
         gammas1, betas1, gammas2, betas2 = cond_params.split()

@@ -11,7 +11,7 @@ class FiLMGen(nn.Module):
         self.num_models = num_modules
         self.module_num_layers = module_num_layers
         self.module_dim = module_dim
-        self.cond_feat_size = 1024 #2 * self.module_dim * self.module_num_layers
+        self.cond_feat_size = 2048 #2 * self.module_dim * self.module_num_layers
         self.layers = nn.Sequential(
             nn.Linear(input_dim, 10000),
             nn.ReLU(),

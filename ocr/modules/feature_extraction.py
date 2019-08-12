@@ -59,6 +59,7 @@ class ResNet_FeatureExtractor(nn.Module):
         self.ConvNet = ResNet(input_channel, output_channel, BasicBlock, [1, 2, 5, 3])
 
     def forward(self, input, cond_params):
+        import pdb; pdb.set_trace()
         return self.ConvNet(input, cond_params)
 
 

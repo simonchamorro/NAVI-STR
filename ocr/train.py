@@ -146,7 +146,10 @@ def train(opt):
         street_names = meta_df['street_name'].dropna().unique().tolist()
         import pdb; pdb.set_trace()
         cond_house_numbers = torch.FloatTensor([convert_house_numbers(num) for num in house_numbers[:20]])
-        cond_street_names = torch.FloatTensor([convert_street_name(name, street_names) for name in street_names[:4]])
+        cond_street_names = []
+        for name in street_names[:4]:
+            cond_street_names.append(convert_street_name(name, np.array(street_names)))
+        cond_street_names = torch.FloatTensor(cond_street_names)
         cond_house_numbers = cond_house_numbers.view(cond_house_numbers.size(0), -1)
         cond_street_names = cond_street_names.view(cond_street_names.size(0), -1)
         cond_text = torch.cat((cond_house_numbers, cond_street_names), 0)

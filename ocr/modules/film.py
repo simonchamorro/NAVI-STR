@@ -11,7 +11,7 @@ class FiLMGen(nn.Module):
         self.num_models = num_modules
         self.module_num_layers = module_num_layers
         self.module_dim = module_dim
-        self.cond_feat_size = 2048 * 16 * 50 #2 * self.module_dim * self.module_num_layers
+        self.cond_feat_size = 2 * 2 * 4 * 128 
         self.layers = nn.Sequential(
             nn.Linear(input_dim, 1000),
             nn.ReLU(),
@@ -30,7 +30,5 @@ class FiLM(nn.Module):
   'FiLM: Visual Reasoning with a General Conditioning Layer'
   """
   def forward(self, x, gammas, betas):
-    x = x.transpose(1, 3)
-    x = (gammas * x) + betas
-    x = x.transpose(1, 3)
-    return x
+    import pdb; pdb.set_trace()
+    return (gammas.view(x.shape[0], x.shape[1], 1, 1) * x) + betas.view(x.shape[0], x.shape[1], 1, 1)

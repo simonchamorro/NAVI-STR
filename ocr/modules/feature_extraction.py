@@ -59,7 +59,6 @@ class ResNet_FeatureExtractor(nn.Module):
         self.ConvNet = ResNet(input_channel, output_channel, BasicBlock, [1, 2, 5, 3])
 
     def forward(self, input, cond_params):
-        import pdb; pdb.set_trace()
         return self.ConvNet(input, cond_params)
 
 
@@ -136,22 +135,22 @@ class BasicBlock(nn.Module):
     def forward(self, x):
         import pdb; pdb.set_trace()
         residual = x[0]
-        gammas1 = x[1][:128]
-        betas1 = x[1][128:256]
-        gammas2 = x[1][256:384]
-        betas2 = x[1][384:512]
+        gammas1 = x[1][:, :128]
+        betas1 = x[1][:, 128:256]
+        gammas2 = x[1][:, 256:384]
+        betas2 = x[1][:, 384:512]
         x = x[0]
 
         out = self.conv1(x)
         if gammas1 is not None:
-            out = FiLM(out, gammas1, betas1)
+            out = FiLM()(out, gammas1, betas1)
         else:
             out = self.bn1(out)
         out = self.relu(out)
 
         out = self.conv2(out)
         if gammas2 is not None:
-            out = FiLM(out, gammas2, betas2)
+            out = FiLM()(out, gammas2, betas2)
         else:
             out = self.bn2(out)
 
@@ -230,24 +229,26 @@ class ResNet(nn.Module):
         x = self.relu(x)
 
         x = self.maxpool1(x)
-        x = self.layer1((x, cond_params[:512]))
+        if cond_params is not None:
+            x = self.layer1((x, cond_params[:, :512]))
         x = self.conv1(x)
         x = self.bn1(x)
         x = self.relu(x)
+        import pdb; pdb.set_trace()
 
         x = self.maxpool2(x)
-        x = self.layer2((x, cond_params[512:1024]))
+        x = self.layer2((x, cond_params[:, 512:1024]))
         x = self.conv2(x)
         x = self.bn2(x)
         x = self.relu(x)
 
         x = self.maxpool3(x)
-        x = self.layer3((x, cond_params[1024:1536]))
+        x = self.layer3((x, cond_params[:, 1024:1536]))
         x = self.conv3(x)
         x = self.bn3(x)
         x = self.relu(x)
 
-        x = self.layer4((x, cond_params[1536:2048]))
+        x = self.layer4((x, cond_params[:, 1536:2048]))
         x = self.conv4_1(x)
         x = self.bn4_1(x)
         x = self.relu(x)

@@ -140,20 +140,6 @@ def train(opt):
     patience = opt.patience
     print(f"opt.patience: {patience}")
 
-    if opt.apply_film: # TODO: delete this
-        meta_df = pd.read_hdf("meta.hdf5", key='df', mode='r') # TODO: delete this
-        house_numbers = meta_df['house_number'].dropna().unique().tolist()
-        street_names = meta_df['street_name'].dropna().unique().tolist()
-        cond_house_numbers = torch.FloatTensor([convert_house_numbers(num) for num in house_numbers[:20]])
-        cond_street_names = []
-        for name in street_names[:4]:
-            cond_street_names.append(convert_street_name(name, np.array(street_names)))
-        cond_street_names = torch.FloatTensor(cond_street_names)
-        cond_house_numbers = cond_house_numbers.view(-1)
-        cond_street_names = cond_street_names.view(-1)
-        cond_text = torch.cat((cond_house_numbers, cond_street_names), 0)
-        cond_text = cond_text.cuda()
-
     while(True):
         # train part
         for p in model.parameters():
@@ -173,7 +159,7 @@ def train(opt):
             cond_params = None
             if opt.apply_film:
                 cond_params = film_gen(cond_text)
-            import pdb; pdb.set_trace()
+                cond_params = cond_params.repeat(192).view(192, -1)
             preds = model(image, cond_params)
             target = text[:, 1:]  # without [GO] Symbol
             cost = criterion(preds.view(-1, preds.shape[-1]), target.contiguous().view(-1))

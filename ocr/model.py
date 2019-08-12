@@ -73,9 +73,9 @@ class Model(nn.Module):
             input = self.Transformation(input)
 
         """ Feature extraction stage """
-        if cond_params:
+        try:
             visual_feature = self.FeatureExtraction(input, cond_params)
-        else:
+        except RuntimeError:
             visual_feature = self.FeatureExtraction(input)
 
         visual_feature = self.AdaptiveAvgPool(visual_feature.permute(0, 3, 1, 2))  # [b, c, h, w] -> [b, w, c, h]

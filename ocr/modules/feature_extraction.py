@@ -138,14 +138,14 @@ class BasicBlock(nn.Module):
         out = self.conv1(x)
         import pdb; pdb.set_trace()
         gammas1, betas1, gammas2, betas2 = cond_params.split()
-        if cond_params:
+        if cond_params is not None:
             out = FiLM(out, gammas1, betas1)
         else:
             out = self.bn1(out)
         out = self.relu(out)
 
         out = self.conv2(out)
-        if cond_params:
+        if cond_params is not None:
             out = FiLM(out, gammas2, betas2)
         else:
             out = self.bn2(out)
@@ -210,7 +210,7 @@ class ResNet(nn.Module):
             )
 
         layers = []
-        if cond_params:
+        if cond_params is not None:
             layers.append(block(self.inplanes, planes, stride, downsample, cond_params))
             self.inplanes = planes * block.expansion
             for i in range(1, blocks):

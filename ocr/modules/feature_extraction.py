@@ -133,13 +133,14 @@ class BasicBlock(nn.Module):
                          padding=1, bias=False)
 
     def forward(self, x):
-        import pdb; pdb.set_trace()
         residual = x[0]
-        gammas1 = x[1][:, :128]
-        betas1 = x[1][:, 128:256]
-        gammas2 = x[1][:, 256:384]
-        betas2 = x[1][:, 384:512]
+        cond_vars = x[1]
         x = x[0]
+        dim = int(cond_vars.shape[1]/4)
+        gammas1 = cond_vars[:, :dim]
+        betas1 = cond_vars[:, dim: 2 * dim]
+        gammas2 = cond_vars[:, 2 * dim: 3 * dim]
+        betas2 = cond_vars[:, 3 * dim:]
 
         out = self.conv1(x)
         if gammas1 is not None:
@@ -159,7 +160,7 @@ class BasicBlock(nn.Module):
         out += residual
         out = self.relu(out)
 
-        return out
+        return out, cond_vars
 
 
 class ResNet(nn.Module):
@@ -230,30 +231,43 @@ class ResNet(nn.Module):
 
         x = self.maxpool1(x)
         if cond_params is not None:
-            x = self.layer1((x, cond_params[:, :512]))
+            x, _ = self.layer1((x, cond_params[0]))
+        else:
+            x = self.layer1(x)
+
         x = self.conv1(x)
         x = self.bn1(x)
         x = self.relu(x)
-        import pdb; pdb.set_trace()
-
         x = self.maxpool2(x)
-        x = self.layer2((x, cond_params[:, 512:1024]))
+
+        if cond_params is not None:
+           x, _ = self.layer2((x, cond_params[1]))
+        else:
+            x = self.layer2(x)
+
         x = self.conv2(x)
         x = self.bn2(x)
         x = self.relu(x)
 
         x = self.maxpool3(x)
-        x = self.layer3((x, cond_params[:, 1024:1536]))
+        if cond_params is not None:
+            x, _ = self.layer3((x, cond_params[2]))
+        else:
+            x = self.layer3(x)
+
         x = self.conv3(x)
         x = self.bn3(x)
         x = self.relu(x)
 
-        x = self.layer4((x, cond_params[:, 1536:2048]))
+        if cond_params is not None:
+            x, _ = self.layer4((x, cond_params[3]))
+        else:
+            x = self.layer4(x)
+
         x = self.conv4_1(x)
         x = self.bn4_1(x)
         x = self.relu(x)
         x = self.conv4_2(x)
         x = self.bn4_2(x)
         x = self.relu(x)
-
         return x

@@ -15,6 +15,8 @@ from nltk.metrics.distance import edit_distance
 from utils import CTCLabelConverter, AttnLabelConverter, Averager
 from dataset import hierarchical_dataset, AlignCollate
 from model import Model
+from modules.film import FiLMGen
+from SEVN_gym.envs.utils import convert_street_name, convert_house_numbers
 
 
 def benchmark_all_eval(model, criterion, converter, opt, calculate_infer_time=False):
@@ -68,7 +70,7 @@ def benchmark_all_eval(model, criterion, converter, opt, calculate_infer_time=Fa
     return None
 
 
-def validation(model, criterion, evaluation_loader, converter, opt, eval_data=None):
+def validation(model, criterion, evaluation_loader, converter, film_gens, opt, eval_data=None):
     """ validation or evaluation """
     for p in model.parameters():
         p.requires_grad = False
@@ -113,7 +115,25 @@ def validation(model, criterion, evaluation_loader, converter, opt, eval_data=No
             preds_str = converter.decode(preds_index.data, preds_size.data)
 
         else:
-            preds = model(image, text_for_pred, is_train=False)
+            # TODO: delete this
+            meta_df = pd.read_hdf("meta.hdf5", key='df', mode='r') 
+            house_numbers = meta_df['house_number'].dropna().unique().tolist()
+            street_names = meta_df['street_name'].dropna().unique().tolist()
+            cond_house_numbers = torch.FloatTensor([convert_house_numbers(num) for num in house_numbers[:20]])
+            cond_street_names = []
+            for name in street_names[:4]:
+                cond_street_names.append(convert_street_name(name, np.array(street_names)))
+            cond_street_names = torch.FloatTensor(cond_street_names)
+            cond_house_numbers = cond_house_numbers.view(-1)
+            cond_street_names = cond_street_names.view(-1)
+            cond_text = torch.cat((cond_house_numbers, cond_street_names), 0)
+            cond_text = cond_text.cuda()
+            cond_text = cond_text.repeat(130).view(130, -1)
+            cond_params = []
+            for film_gen in film_gens:
+                cond_params.append(film_gen(cond_text))
+
+            preds = model(image, text_for_pred, cond_params, is_train=False)
             forward_time = time.time() - start_time
 
             preds = preds[:, :text_for_loss.shape[1] - 1, :]

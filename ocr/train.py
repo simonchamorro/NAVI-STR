@@ -51,7 +51,12 @@ def train(opt):
     if opt.rgb:
         opt.input_channel = 3
     model = Model(opt)
-    film_gen = FiLMGen(input_dim=844, module_dim=opt.output_channel).cuda()
+    
+    output_channel_block = [int(opt.output_channel / 4), int(opt.output_channel / 2), opt.output_channel, opt.output_channel]
+    film_gens = []
+    for output_channel in output_channel_block:
+        film_gens.append(FiLMGen(input_dim=844, module_dim=output_channel).cuda())
+
     print('model input parameters', opt.imgH, opt.imgW, opt.num_fiducial, opt.input_channel, opt.output_channel,
           opt.hidden_size, opt.num_class, opt.batch_max_length, opt.Transformation, opt.FeatureExtraction,
           opt.SequenceModeling, opt.Prediction)
@@ -140,6 +145,21 @@ def train(opt):
     patience = opt.patience
     print(f"opt.patience: {patience}")
 
+    if opt.apply_film: # TODO: delete this
+        meta_df = pd.read_hdf("meta.hdf5", key='df', mode='r') # TODO: delete this
+        house_numbers = meta_df['house_number'].dropna().unique().tolist()
+        street_names = meta_df['street_name'].dropna().unique().tolist()
+        cond_house_numbers = torch.FloatTensor([convert_house_numbers(num) for num in house_numbers[:20]])
+        cond_street_names = []
+        for name in street_names[:4]:
+            cond_street_names.append(convert_street_name(name, np.array(street_names)))
+        cond_street_names = torch.FloatTensor(cond_street_names)
+        cond_house_numbers = cond_house_numbers.view(-1)
+        cond_street_names = cond_street_names.view(-1)
+        cond_text = torch.cat((cond_house_numbers, cond_street_names), 0)
+        cond_text = cond_text.cuda()
+        cond_text = cond_text.repeat(192).view(192, -1)
+
     while(True):
         # train part
         for p in model.parameters():
@@ -158,9 +178,11 @@ def train(opt):
         else:
             cond_params = None
             if opt.apply_film:
-                cond_params = film_gen(cond_text)
-                cond_params = cond_params.repeat(192).view(192, -1)
-            preds = model(image, cond_params)
+                cond_params = []
+                for film_gen in film_gens:
+                    cond_params.append(film_gen(cond_text))
+
+            preds = model(image, text, cond_params)
             target = text[:, 1:]  # without [GO] Symbol
             cost = criterion(preds.view(-1, preds.shape[-1]), target.contiguous().view(-1))
 
@@ -187,7 +209,7 @@ def train(opt):
 
                 model.eval()
                 valid_loss, current_accuracy, current_norm_ED, preds, labels, infer_time, length_of_data = validation(
-                    model, criterion, valid_loader, converter, opt)
+                    model, criterion, valid_loader, converter, film_gens, opt)
                 model.train()
 
                 for pred, gt in zip(preds[:5], labels[:5]):

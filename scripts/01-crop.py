@@ -31,21 +31,21 @@ def process_labels(paths):
                     obj_type, street_name = text_label.split("-")
                 except Exception as e:
                     # print("street_sign: " + str(e))
-                    failed_to_parse.append(text_label)
+                    failed_to_parse.append((frame, text_label))
                     continue
             elif text_label.split("-")[0] == "house_number":
                 try:
                     obj_type, house_number, street_name = text_label.split("-")
                 except Exception as e:
                     # print("house_number: " + str(e))
-                    failed_to_parse.append(text_label)
+                    failed_to_parse.append((frame, text_label))
                     continue
             elif text_label.split("-")[0] == "door":
                 try:
                     obj_type, house_number, street_name = text_label.split("-")
                 except Exception as e:
                     print("door: " + str(e))
-                    failed_to_parse.append(text_label)
+                    failed_to_parse.append((frame, text_label))
                     continue
             x_min = int(node.find("bndbox").find("xmin").text)
             x_max = int(node.find("bndbox").find("xmax").text)

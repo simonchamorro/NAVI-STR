@@ -67,7 +67,7 @@
         </bndbox>
     </object>
     <object>
-        <name>house_number-6867</name>
+        <name>house_number-6867-clark</name>
         <pose>Unspecified</pose>
         <truncated>0</truncated>
         <occluded>0</occluded>

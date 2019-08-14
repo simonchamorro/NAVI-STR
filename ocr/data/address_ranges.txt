@@ -1,9 +1,9 @@
 # street	side	from	to	range
-saint-laurent	E	beaubien	saint-zotique	6547-6703
-saint-laurent	W	beaubien	saint-zotique	6500-6602
+saint-laurent	E	beaubien	saint-zotique	6537-6703
+saint-laurent	W	beaubien	saint-zotique	6484-6602
 saint-laurent	E	saint-zotique	mozart	6705-6979
 saint-laurent	W	saint-zotique	mozart	6700-6950
-saint-laurent	E	mozart	jean-talon	6981-7117
+saint-laurent	E	mozart	jean-talon	6981-7203
 saint-laurent	W	mozart	jean-talon	7010-7188
 clark	E	beaubien	saint-zotique	6505-6585
 clark	W	beaubien	saint-zotique	6506-6660
@@ -16,7 +16,7 @@ clark	W	mozart	jean-talon	6936-7194
 saint-urbain	E	beaubien	saint-zotique	6535-6695
 saint-urbain	W	beaubien	saint-zotique	6600-6650
 saint-urbain	E	saint-zotique	beaumont	6709-6845
-saint-urbain	W	saint-zotique	beaumont	6666-6840
+saint-urbain	W	saint-zotique	beaumont	6666-6880
 saint-urbain	E	mozart	jean-talon	7001-7175
 saint-urbain	W	mozart	jean-talon	7002-7182
 beaubien	S	saint-laurent	clark	2-44
@@ -31,7 +31,7 @@ beaumont	S	clark	saint-urbain	80-82
 beaumont	N	clark	saint-urbain	51-115
 mozart	S	saint-laurent	clark	16-22
 mozart	N	saint-laurent	clark	17-45
-mozart	S	clark	saint-urbain	56-98
+mozart	S	clark	saint-urbain	54-98
 mozart	N	clark	saint-urbain	53-77
 jean-talon	S	saint-laurent	clark	2-40
 jean-talon	N	saint-laurent	clark	35-51

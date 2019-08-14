@@ -17,6 +17,7 @@ from dataset import hierarchical_dataset, AlignCollate
 from model import Model
 from modules.film import FiLMGen
 from SEVN_gym.envs.utils import convert_street_name, convert_house_numbers
+from load_ranges import get_random, get_sequence
 
 
 def benchmark_all_eval(model, criterion, converter, opt, calculate_infer_time=False):
@@ -70,7 +71,7 @@ def benchmark_all_eval(model, criterion, converter, opt, calculate_infer_time=Fa
     return None
 
 
-def validation(model, criterion, evaluation_loader, converter, film_gens, opt, eval_data=None):
+def validation(model, criterion, evaluation_loader, converter, opt, eval_data=None, film_gens=None):
     """ validation or evaluation """
     for p in model.parameters():
         p.requires_grad = False
@@ -80,17 +81,13 @@ def validation(model, criterion, evaluation_loader, converter, film_gens, opt, e
     length_of_data = 0
     infer_time = 0
     valid_loss_avg = Averager()
-    if opt.ed_condition:
-        meta_df = pd.read_hdf("meta.hdf5", key='df', mode='r')
-        house_numbers = meta_df['house_number'].dropna().unique().tolist()
-        street_names = meta_df['street_name'].dropna().unique().tolist()
-        text = []
-        text.extend(house_numbers)
-        text.extend(street_names)
 
     for i, (image_tensors, labels) in enumerate(evaluation_loader):
         batch_size = image_tensors.size(0)
         length_of_data = length_of_data + batch_size
+        ids = labels
+        labels = [label.split("_")[0] for label in labels]
+
         with torch.no_grad():
             image = image_tensors.cuda()
             # For max length prediction
@@ -115,23 +112,17 @@ def validation(model, criterion, evaluation_loader, converter, film_gens, opt, e
             preds_str = converter.decode(preds_index.data, preds_size.data)
 
         else:
-            # TODO: delete this
-            meta_df = pd.read_hdf("meta.hdf5", key='df', mode='r') 
-            house_numbers = meta_df['house_number'].dropna().unique().tolist()
-            street_names = meta_df['street_name'].dropna().unique().tolist()
-            cond_house_numbers = torch.FloatTensor([convert_house_numbers(num) for num in house_numbers[:20]])
-            cond_street_names = []
-            for name in street_names[:4]:
-                cond_street_names.append(convert_street_name(name, np.array(street_names)))
-            cond_street_names = torch.FloatTensor(cond_street_names)
-            cond_house_numbers = cond_house_numbers.view(-1)
-            cond_street_names = cond_street_names.view(-1)
-            cond_text = torch.cat((cond_house_numbers, cond_street_names), 0)
-            cond_text = cond_text.cuda()
-            cond_text = cond_text.repeat(130).view(130, -1)
+            num_hn = 5
+            num_ed_text = 20
+            cond_house_numbers = [get_random(int(img_id.split("_")[0]), img_id.split("_")[1], num_hn) for img_id in ids]
+            ed_text = [get_random(int(img_id.split("_")[0]), img_id.split("_")[1], num_ed_text) for img_id in ids]
+            cond_house_numbers = [convert_house_numbers(n) for l in cond_house_numbers for n in l]
+            cond_house_numbers = torch.FloatTensor(cond_house_numbers)
+            cond_text = cond_house_numbers.view(-1, num_hn * 40).cuda()
             cond_params = []
-            for film_gen in film_gens:
-                cond_params.append(film_gen(cond_text))
+            if opt.apply_film:
+                for film_gen in film_gens:
+                    cond_params.append(film_gen(cond_text))
 
             preds = model(image, text_for_pred, cond_params, is_train=False)
             forward_time = time.time() - start_time
@@ -150,20 +141,19 @@ def validation(model, criterion, evaluation_loader, converter, film_gens, opt, e
 
         # calculate accuracy.
         j = 0
-        for pred, gt in zip(preds_str, labels):
+        for pred, gt, text in zip(preds_str, labels, ed_text):
             if 'Attn' in opt.Prediction:
                 pred = pred[:pred.find('[s]')]  # prune after "end of sentence" token ([s])
                 gt = gt[:gt.find('[s]')]
             
             if opt.ed_condition:
-                random.shuffle(text)
-        
-                context = text[:100]
-                if gt not in context:
-                    context[0] = gt
+                text = [str(num) for num in text]
+                if gt not in text:
+                    text[0] = gt
+                    random.shuffle(text)
                 
                 distances = {}
-                for word in context:
+                for word in text:
                     d = edit_distance(word, pred)
                     distances[word] = d
                 pred = min(distances, key=distances.get) 
@@ -203,7 +193,13 @@ def test(opt):
     # load model
     print('loading pretrained model from %s' % opt.saved_model)
     model.load_state_dict(torch.load(opt.saved_model))
-    opt.experiment_name = '_'.join(opt.saved_model.split('/')[1:])
+    film_gens = []
+    output_channel_block = [int(opt.output_channel / 4), int(opt.output_channel / 2), opt.output_channel, opt.output_channel]
+    for output_channel in output_channel_block:
+        film_gens.append(FiLMGen(input_dim=200, module_dim=output_channel).cuda())
+    if opt.apply_film:
+        for i, film_gen in enumerate(film_gens):
+            film_gen.load_state_dict(torch.load(f'./{"/".join(opt.saved_model.split("/")[:-1])}/best_accuracy_film_gen_{i}.pth'))
     # print(model)
 
     """ keep evaluation model and result logs """
@@ -232,7 +228,7 @@ def test(opt):
             collate_fn=AlignCollate_evaluation, pin_memory=True)
 
         _, accuracy_by_best_model, _, _, _, _, _ = validation(
-            model, criterion, evaluation_loader, converter, opt, eval_data)
+            model, criterion, evaluation_loader, converter, opt, eval_data, film_gens=film_gens)
 
         print(accuracy_by_best_model)
         with open('./result/{0}/log_evaluation.txt'.format(opt.experiment_name), 'a') as log:
@@ -242,6 +238,7 @@ def test(opt):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--eval_data', required=True, help='path to evaluation dataset')
+    parser.add_argument('--experiment_name', required=True, help='Experiment name')
     parser.add_argument('--benchmark_all_eval', action='store_true', help='evaluate 10 benchmark evaluation datasets')
     parser.add_argument('--workers', type=int, help='number of data loading workers', default=4)
     parser.add_argument('--batch_size', type=int, default=192, help='input batch size')
@@ -264,8 +261,9 @@ if __name__ == '__main__':
     parser.add_argument('--output_channel', type=int, default=512,
                         help='the number of output channel of Feature extractor')
     parser.add_argument('--hidden_size', type=int, default=256, help='the size of the LSTM hidden state')
-    parser.add_argument('--ed_condition', action="store_true", help='dont use comet')
+    parser.add_argument('--ed_condition', action="store_true", help='Matching')
     parser.add_argument('--seed', type=int, default=0, help='random seed')
+    parser.add_argument('--apply_film', action="store_true", help='Apply film to the')
 
     opt = parser.parse_args()
 

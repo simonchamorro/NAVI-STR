@@ -16,27 +16,31 @@ def find_range(num, street, ranges):
         if street == segment['street'] and num >= segment['min'] \
         and num <= segment['max'] and (segment['max'] - num) % 2 == 0:
             num_range = segment['range']
+    if num_range is None:
+        print(street)
+        print(num)
     return num_range
 
-def get_random(num, street, ranges, qty):
+def get_random(num, street, qty):
+    ranges = load_ranges('./data/address_ranges.txt')
     random_range = find_range(num, street, ranges)
-    random.shuffle(random_range)
     if qty <= len(random_range):
+        random.shuffle(random_range)
         return random_range[:qty]
     else:
+        random_range = random.choices(random_range, k=qty)
         return random_range
 
-def get_sequence(num, street, ranges, qty):
+def get_sequence(num, street, qty):
+    ranges = load_ranges('./data/address_ranges.txt')
     num_range = find_range(num, street, ranges)
     segment1 = num_range[:num_range.index(num)]
     segment2 = num_range[num_range.index(num) + 1:]
     if len(segment1) >= len(segment2):
-        qty = len(segment1) if qty > len(segment1) else qty
-        sequence = random.sample(segment1, qty)
+        sequence = random.choices(segment1, k=qty)
         sequence.sort()
     elif len(segment2) > len(segment1):
-        qty = len(segment1) if qty > len(segment2) else qty
-        sequence = random.sample(segment2, qty)
+        sequence = random.choices(segment2, k=qty)
         sequence.sort(reverse=True)
     return sequence
 
@@ -57,8 +61,7 @@ def load_ranges(filename):
     return ranges
 
 if __name__ == '__main__':
-    ranges = load_ranges('./data/address_ranges.txt')
-    random_nums = get_random(6585, 'saint-laurent', ranges, 5)
-    sequence_nums = get_sequence(6600, 'saint-urbain', ranges, 5)
-    sequence_nums1 = get_sequence(43, 'jean-talon', ranges, 5)
+    random_nums = get_random(6585, 'saint-laurent', 5)
+    sequence_nums = get_sequence(6600, 'saint-urbain', 5)
+    sequence_nums1 = get_sequence(43, 'jean-talon', 5)
     import pdb; pdb.set_trace()

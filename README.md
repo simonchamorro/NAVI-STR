@@ -9,7 +9,7 @@ Scene Text Recognition pipeline for NAVI (Navigational Assistant for the Visuall
 
 ## Pipeline
 1. Scene text detection using yolo implementation from https://github.com/eriklindernoren/PyTorch-YOLOv3
-2. Scene text recognition using this implementation https://github.com/clovaai/deep-text-recognition-benchmark
+2. Scene text recognition using this implementation https://github.com/clovaai/ocr
 
 ## Training
 ##### YOLO

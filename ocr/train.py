@@ -25,6 +25,7 @@ from model import Model
 from modules.film import FiLMGen
 from test import validation
 from SEVN_gym.envs.utils import convert_street_name, convert_house_numbers
+from load_ranges import get_random, get_sequence
 
 def train(opt):
     """ dataset preparation """
@@ -55,7 +56,7 @@ def train(opt):
     output_channel_block = [int(opt.output_channel / 4), int(opt.output_channel / 2), opt.output_channel, opt.output_channel]
     film_gens = []
     for output_channel in output_channel_block:
-        film_gens.append(FiLMGen(input_dim=844, module_dim=output_channel).cuda())
+        film_gens.append(FiLMGen(input_dim=200, module_dim=output_channel).cuda())
 
     print('model input parameters', opt.imgH, opt.imgW, opt.num_fiducial, opt.input_channel, opt.output_channel,
           opt.hidden_size, opt.num_class, opt.batch_max_length, opt.Transformation, opt.FeatureExtraction,
@@ -145,26 +146,19 @@ def train(opt):
     patience = opt.patience
     print(f"opt.patience: {patience}")
 
-    if opt.apply_film: # TODO: delete this
-        meta_df = pd.read_hdf("meta.hdf5", key='df', mode='r') # TODO: delete this
-        house_numbers = meta_df['house_number'].dropna().unique().tolist()
-        street_names = meta_df['street_name'].dropna().unique().tolist()
-        cond_house_numbers = torch.FloatTensor([convert_house_numbers(num) for num in house_numbers[:20]])
-        cond_street_names = []
-        for name in street_names[:4]:
-            cond_street_names.append(convert_street_name(name, np.array(street_names)))
-        cond_street_names = torch.FloatTensor(cond_street_names)
-        cond_house_numbers = cond_house_numbers.view(-1)
-        cond_street_names = cond_street_names.view(-1)
-        cond_text = torch.cat((cond_house_numbers, cond_street_names), 0)
-        cond_text = cond_text.cuda()
-        cond_text = cond_text.repeat(192).view(192, -1)
-
     while(True):
         # train part
         for p in model.parameters():
             p.requires_grad = True
         image_tensors, labels = train_dataset.get_batch()
+
+        ids = labels
+        labels = [label.split("_")[0] for label in labels]
+        num_hn = 5
+        cond_house_numbers = [get_random(int(img_id.split("_")[0]), img_id.split("_")[1], num_hn) for img_id in ids]
+        cond_house_numbers = [convert_house_numbers(n) for l in cond_house_numbers for n in l]
+        cond_house_numbers = torch.FloatTensor(cond_house_numbers)
+        cond_text = cond_house_numbers.view(-1, num_hn * 40).cuda()
         image = image_tensors.cuda()
         text, length = converter.encode(labels)
         batch_size = image.size(0)
@@ -209,7 +203,7 @@ def train(opt):
 
                 model.eval()
                 valid_loss, current_accuracy, current_norm_ED, preds, labels, infer_time, length_of_data = validation(
-                    model, criterion, valid_loader, converter, film_gens, opt)
+                    model, criterion, valid_loader, converter, opt, film_gens=film_gens)
                 model.train()
 
                 for pred, gt in zip(preds[:5], labels[:5]):
@@ -233,6 +227,8 @@ def train(opt):
                     patience = opt.patience
                     best_accuracy = current_accuracy
                     torch.save(model.state_dict(), f'./saved_models/{opt.experiment_name}/best_accuracy.pth')
+                    for i, film_gen in enumerate(film_gens):
+                        torch.save(film_gen.state_dict(), f'./saved_models/{opt.experiment_name}/best_accuracy_film_gen_{i}.pth')
                 else:
                     patience -= 1
                     if patience == 0:
@@ -334,7 +330,7 @@ if __name__ == '__main__':
     if opt.num_gpu > 1:
         print('------ Use multi-GPU setting ------')
         print('if you stuck too long time with multi-GPU setting, try to set --workers 0')
-        # check multi-GPU issue https://github.com/clovaai/deep-text-recognition-benchmark/issues/1
+        # check multi-GPU issue https://github.com/clovaai/ocr/issues/1
         opt.workers = opt.workers * opt.num_gpu
 
         """ previous version

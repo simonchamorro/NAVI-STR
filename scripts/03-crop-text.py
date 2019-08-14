@@ -21,9 +21,9 @@ def crop_text(img_path):
         if label.obj_type == 'door': continue
         elif label.obj_type == 'house_number':
             text = label.house_number
-            out_fname = f'data/images/{text}_{label.street_name}_{frame}.png'
+            out_fname = f'data/images/{text}_{label.street_name.replace("_", "-")}_{frame}.png'
         elif label.obj_type == 'street_sign':
-            text = label.street_name
+            text = label.street_name.replace("_", "-")
             out_fname = f'data/images/{text}_{frame}.png'
         if out_fname in paths: continue
     
@@ -31,12 +31,12 @@ def crop_text(img_path):
         crop = img[label.y_min:label.y_max, label.x_min:label.x_max]
         if 0 in crop.shape: continue 
         
-        # cv2.imwrite(dest_path + out_fname, crop)
+        cv2.imwrite(dest_path + out_fname, crop)
         paths.append(out_fname)
         gt.append((text, label.obj_type))
 
 images_path = "./PyTorch-YOLOv3/data/sevn/images/"
-dest_path = "./deep-text-recognition-benchmark/"
+dest_path = "./ocr/"
 labels_file = "./data/labels/crop_labels.hdf5"
 
 labels_df = pd.read_hdf(labels_file, key="df", index=False)
@@ -57,7 +57,7 @@ f.close()
 with open(f'{dest_path}data/house_number_gt.txt', 'w') as f:
     for idx in range(len(paths)):
         if gt[idx][1] == 'house_number':
-            f.write(f"{paths[idx]}\t{gt[idx][0]}\n")
+            f.write(f"{paths[idx]}\t{gt[idx][0]}_{paths[idx].split('_')[1]}\n")
 f.close()
 
 with open(f'{dest_path}data/street_sign_gt.txt', 'w') as f:

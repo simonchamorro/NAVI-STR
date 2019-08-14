@@ -20,7 +20,6 @@ class FiLMGen(nn.Module):
 
 
     def forward(self, x):
-        print("Cond Feet: " + str(self.cond_feat_size))
         x = self.layers(x)
         return x
 

@@ -58,9 +58,11 @@ class ResNet_FeatureExtractor(nn.Module):
         super(ResNet_FeatureExtractor, self).__init__()
         self.ConvNet = ResNet(input_channel, output_channel, BasicBlock, [1, 2, 5, 3])
 
-    def forward(self, input, cond_params):
-        return self.ConvNet(input, cond_params)
-
+    def forward(self, input, cond_params=None):
+        if cond_params:
+            return self.ConvNet(input, cond_params)
+        else:
+            return self.ConvNet(input)
 
 # For Gated RCNN
 class GRCL(nn.Module):
@@ -133,34 +135,48 @@ class BasicBlock(nn.Module):
                          padding=1, bias=False)
 
     def forward(self, x):
-        residual = x[0]
-        cond_vars = x[1]
-        x = x[0]
-        dim = int(cond_vars.shape[1]/4)
-        gammas1 = cond_vars[:, :dim]
-        betas1 = cond_vars[:, dim: 2 * dim]
-        gammas2 = cond_vars[:, 2 * dim: 3 * dim]
-        betas2 = cond_vars[:, 3 * dim:]
+        if len(x) == 2:
+            residual = x[0]
+            cond_vars = x[1]
+            x = x[0]
+            dim = int(cond_vars.shape[1]/4)
+            gammas1 = cond_vars[:, :dim]
+            betas1 = cond_vars[:, dim: 2 * dim]
+            gammas2 = cond_vars[:, 2 * dim: 3 * dim]
+            betas2 = cond_vars[:, 3 * dim:]
 
-        out = self.conv1(x)
-        if gammas1 is not None:
-            out = FiLM()(out, gammas1, betas1)
+            out = self.conv1(x)
+            if gammas1 is not None:
+                out = FiLM()(out, gammas1, betas1)
+            else:
+                out = self.bn1(out)
+            out = self.relu(out)
+
+            out = self.conv2(out)
+            if gammas2 is not None:
+                out = FiLM()(out, gammas2, betas2)
+            else:
+                out = self.bn2(out)
+
+            if self.downsample is not None:
+                residual = self.downsample(x)
+            out += residual
+            out = self.relu(out)
+
+            return out, cond_vars
+        
         else:
+            residual = x
+            out = self.conv1(x)
             out = self.bn1(out)
-        out = self.relu(out)
-
-        out = self.conv2(out)
-        if gammas2 is not None:
-            out = FiLM()(out, gammas2, betas2)
-        else:
+            out = self.relu(out)
+            out = self.conv2(out)
             out = self.bn2(out)
-
-        if self.downsample is not None:
-            residual = self.downsample(x)
-        out += residual
-        out = self.relu(out)
-
-        return out, cond_vars
+            if self.downsample is not None:
+                residual = self.downsample(x)
+            out += residual
+            out = self.relu(out)
+            return out
 
 
 class ResNet(nn.Module):
@@ -228,8 +244,8 @@ class ResNet(nn.Module):
         x = self.conv0_2(x)
         x = self.bn0_2(x)
         x = self.relu(x)
-
         x = self.maxpool1(x)
+
         if cond_params is not None:
             x, _ = self.layer1((x, cond_params[0]))
         else:

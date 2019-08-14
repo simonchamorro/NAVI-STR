@@ -31,7 +31,7 @@
         </bndbox>
     </object>
     <object>
-        <name>house_number-6600</name>
+        <name>house_number-6600-clark</name>
         <pose>Unspecified</pose>
         <truncated>0</truncated>
         <occluded>0</occluded>
@@ -44,7 +44,7 @@
         </bndbox>
     </object>
     <object>
-        <name>house_number-6598</name>
+        <name>house_number-6598-clark</name>
         <pose>Unspecified</pose>
         <truncated>0</truncated>
         <occluded>0</occluded>

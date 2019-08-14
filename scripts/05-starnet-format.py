@@ -27,36 +27,36 @@ with open(f'{pkg_path}data/house_number_gt.txt', 'r') as f:
 		gt = line.split('\t')[-1].replace('\n', '')
 		house_numbers[gt].append(line)
 
-with open(f'{pkg_path}data/street_sign_gt.txt', 'r') as f:
-	for line in f:
-		gt = line.split('\t')[-1].replace('\n', '')
-		street_signs[gt].append(line)
+# with open(f'{pkg_path}data/street_sign_gt.txt', 'r') as f:
+# 	for line in f:
+# 		gt = line.split('\t')[-1].replace('\n', '')
+# 		street_signs[gt].append(line)
 
 gt_house_numbers = [x for x in house_numbers.keys()]
-gt_street_signs = [x for x in street_signs.keys()]
+# gt_street_signs = [x for x in street_signs.keys()]
 
 num_train_hn = int(0.8 * len(gt_house_numbers))
 num_valid_hn = int(0.1 * len(gt_house_numbers))
 num_test_hn = int(0.1 * len(gt_house_numbers))
 
-num_train_ss = int(0.8 * len(gt_street_signs))
-num_valid_ss = int(0.1 * len(gt_street_signs))
-num_test_ss = int(0.1 * len(gt_street_signs))
+# num_train_ss = int(0.8 * len(gt_street_signs))
+# num_valid_ss = int(0.1 * len(gt_street_signs))
+# num_test_ss = int(0.1 * len(gt_street_signs))
 
 train_hn.extend(gt_house_numbers[:num_train_hn])
 valid_hn.extend(gt_house_numbers[num_train_hn:num_train_hn + num_valid_hn])
 test_hn.extend(gt_house_numbers[num_train_hn + num_valid_hn:])
 
-train_ss.extend(gt_street_signs[:num_train_ss])
-valid_ss.extend(gt_street_signs[num_train_ss:num_train_ss + num_valid_ss])
-test_ss.extend(gt_street_signs[num_train_ss + num_valid_ss:])
+# train_ss.extend(gt_street_signs[:num_train_ss])
+# valid_ss.extend(gt_street_signs[num_train_ss:num_train_ss + num_valid_ss])
+# test_ss.extend(gt_street_signs[num_train_ss + num_valid_ss:])
 
 train_lines.extend([house_numbers[hn] for hn in train_hn])
-train_lines.extend([street_signs[ss] for ss in train_ss])
+# train_lines.extend([street_signs[ss] for ss in train_ss])
 valid_lines.extend([house_numbers[hn] for hn in valid_hn])
-valid_lines.extend([street_signs[ss] for ss in valid_ss])
+# valid_lines.extend([street_signs[ss] for ss in valid_ss])
 test_lines.extend([house_numbers[hn] for hn in test_hn])
-test_lines.extend([street_signs[ss] for ss in test_ss])
+# test_lines.extend([street_signs[ss] for ss in test_ss])
 
 train_lines = [item for sublist in train_lines for item in sublist]
 valid_lines = [item for sublist in valid_lines for item in sublist]

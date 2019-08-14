@@ -202,7 +202,7 @@ def train(opt):
                 loss_avg.reset()
 
                 model.eval()
-                valid_loss, current_accuracy, current_norm_ED, preds, labels, infer_time, length_of_data = validation(
+                valid_loss, current_accuracy, current_norm_ED, current_int_dist, preds, labels, infer_time, length_of_data = validation(
                     model, criterion, valid_loader, converter, opt, film_gens=film_gens)
                 model.train()
 
@@ -214,13 +214,14 @@ def train(opt):
                     log.write(f'{pred:20s}, gt: {gt:20s},   {str(pred == gt)}\n')
 
                 valid_log = f'[{i}/{opt.num_iter}] valid loss: {valid_loss:0.5f}'
-                valid_log += f' accuracy: {current_accuracy:0.3f}, norm_ED: {current_norm_ED:0.2f}'
+                valid_log += f' accuracy: {current_accuracy:0.3f}, norm_ED: {current_norm_ED:0.2f}, int_dist: {current_int_dist:0.2f}'
                 print(valid_log)
                 log.write(valid_log + '\n')
                 if experiment is not None:
                     experiment.log_metric("Valid Loss", valid_loss, step=i)
                     experiment.log_metric("Accuracy", current_accuracy, step=i)
                     experiment.log_metric("Norm ED", current_norm_ED, step=i)
+                    experiment.log_metric("Int Distance", current_int_dist, step=i)
 
                 # keep best accuracy model
                 if current_accuracy > best_accuracy:

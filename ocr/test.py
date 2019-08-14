@@ -3,6 +3,7 @@ import time
 import string
 import argparse
 import random
+import re
 
 import torch
 import torch.backends.cudnn as cudnn
@@ -19,6 +20,15 @@ from modules.film import FiLMGen
 from SEVN_gym.envs.utils import convert_street_name, convert_house_numbers
 from load_ranges import get_random, get_sequence
 
+
+def int_distance(num, gt_num):
+    num = re.sub("[^0-9]", "", num)
+    try:
+        num = int(num)
+    except:
+        num = 0
+    distance = np.abs(num - int(gt_num))
+    return distance
 
 def benchmark_all_eval(model, criterion, converter, opt, calculate_infer_time=False):
     """ evaluation with 10 benchmark evaluation datasets """
@@ -46,13 +56,13 @@ def benchmark_all_eval(model, criterion, converter, opt, calculate_infer_time=Fa
             num_workers=int(opt.workers),
             collate_fn=AlignCollate_evaluation, pin_memory=True)
 
-        _, accuracy_by_best_model, norm_ED_by_best_model, _, _, infer_time, length_of_data = validation(
+        _, accuracy_by_best_model, norm_ED_by_best_model, int_dist_by_best_model, _, _, infer_time, length_of_data = validation(
             model, criterion, evaluation_loader, converter, opt)
         list_accuracy.append(f'{accuracy_by_best_model:0.3f}')
         total_forward_time += infer_time
         total_evaluation_data_number += len(eval_data)
         total_correct_number += accuracy_by_best_model * length_of_data
-        print('Acc %0.3f\t normalized_ED %0.3f' % (accuracy_by_best_model, norm_ED_by_best_model))
+        print('Acc %0.3f\t normalized_ED %0.3f\t int_distance %0.3f' % (accuracy_by_best_model, norm_ED_by_best_model, int_dist_by_best_model))
         print('-' * 80)
 
     averaged_forward_time = total_forward_time / total_evaluation_data_number * 1000
@@ -78,6 +88,7 @@ def validation(model, criterion, evaluation_loader, converter, opt, eval_data=No
 
     n_correct = 0
     norm_ED = 0
+    int_dist = 0
     length_of_data = 0
     infer_time = 0
     valid_loss_avg = Averager()
@@ -167,11 +178,12 @@ def validation(model, criterion, evaluation_loader, converter, opt, eval_data=No
                     eval_data[i * batch_size + j][0].save(f"./result/{opt.experiment_name}/incorrect/sample_{i * batch_size + j}_pred_{pred}.png")
 
             norm_ED += edit_distance(pred, gt) / len(gt)
+            int_dist += int_distance(pred, gt)
             j += 1
 
     accuracy = n_correct / float(length_of_data) * 100
 
-    return valid_loss_avg.val(), accuracy, norm_ED, preds_str, labels, infer_time, length_of_data
+    return valid_loss_avg.val(), accuracy, norm_ED, int_dist, preds_str, labels, infer_time, length_of_data
 
 
 def test(opt):
@@ -227,12 +239,14 @@ def test(opt):
             num_workers=int(opt.workers),
             collate_fn=AlignCollate_evaluation, pin_memory=True)
 
-        _, accuracy_by_best_model, _, _, _, _, _ = validation(
+        _, accuracy_by_best_model, norm_ED, int_dist, _, _, _, _ = validation(
             model, criterion, evaluation_loader, converter, opt, eval_data, film_gens=film_gens)
 
         print(accuracy_by_best_model)
-        with open('./result/{0}/log_evaluation.txt'.format(opt.experiment_name), 'a') as log:
+        with open('./result/{0}/log_evaluation.txt'.format(opt.experiment_name), 'w') as log:
             log.write(str(accuracy_by_best_model) + '\n')
+            log.write(str(norm_ED) + '\n')
+            log.write(str(int_dist) + '\n')
 
 
 if __name__ == '__main__':

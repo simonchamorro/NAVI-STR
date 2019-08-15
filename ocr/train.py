@@ -54,7 +54,7 @@ def train(opt):
     model = Model(opt)
     
     output_channel_block = [int(opt.output_channel / 4), int(opt.output_channel / 2), opt.output_channel, opt.output_channel]
-    film_gens = []
+    film_gens = nn.ModuleList([])
     for output_channel in output_channel_block:
         film_gens.append(FiLMGen(input_dim=200, module_dim=output_channel).cuda())
 

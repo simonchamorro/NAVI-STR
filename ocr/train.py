@@ -76,7 +76,7 @@ def train(opt):
 
     # data parallel for multi-GPU
     model = torch.nn.DataParallel(model).cuda()
-    model.eval()
+    model.train()
     film_gen.train()
     if opt.continue_model != '':
         print(f'loading pretrained model from {opt.continue_model}')
@@ -205,7 +205,7 @@ def train(opt):
                 film_gen.eval()
                 valid_loss, current_accuracy, current_norm_ED, current_int_dist, preds, labels, infer_time, length_of_data = validation(
                     model, criterion, valid_loader, converter, opt, film_gen=film_gen)
-                model.eval()
+                model.train()
                 film_gen.train()
                 for pred, gt in zip(preds[:5], labels[:5]):
                     if 'Attn' in opt.Prediction:

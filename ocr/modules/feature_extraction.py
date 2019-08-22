@@ -141,14 +141,13 @@ class BasicBlock(nn.Module):
             x = x[0]
 
             dim = int(self.bn1.weight.shape[0])
-            gammas1 = cond_vars[:, :dim]
+            gammas1 = cond_vars[:, :dim] + 1
             betas1 = cond_vars[:, dim: 2 * dim]
-            gammas2 = cond_vars[:, 2 * dim: 3 * dim]
+            gammas2 = cond_vars[:, 2 * dim: 3 * dim] + 1
             betas2 = cond_vars[:, 3 * dim: 4 * dim]
             cond_vars = cond_vars[:, 4 * dim:]
 
             out = self.conv1(x)
-            import pdb; pdb.set_trace()
             out = (gammas1.view(x.shape[0], x.shape[1], 1, 1) * x) + betas1.view(x.shape[0], x.shape[1], 1, 1)
             out = self.relu(out)
 

@@ -147,19 +147,19 @@ class BasicBlock(nn.Module):
             betas2 = cond_vars[:, 3 * dim: 4 * dim]
             cond_vars = cond_vars[:, 4 * dim:]
 
-            x = self.conv1(x)
-            x = (gammas1.view(x.shape[0], x.shape[1], 1, 1) * x) + betas1.view(x.shape[0], x.shape[1], 1, 1)
-            x = self.relu(x)
+            out = self.conv1(x)
+            out = (gammas1.view(out.shape[0], out.shape[1], 1, 1) * out) + betas1.view(x.shape[0], out.shape[1], 1, 1)
+            out = self.relu(out)
 
-            x = self.conv2(x)
-            x = (gammas2.view(x.shape[0], x.shape[1], 1, 1) * x) + betas2.view(x.shape[0], x.shape[1], 1, 1)
+            out = self.conv2(out)
+            out = (gammas2.view(out.shape[0], out.shape[1], 1, 1) * out) + betas2.view(out.shape[0], out.shape[1], 1, 1)
 
             if self.downsample is not None:
                 residual = self.downsample(x)
-            x += residual
-            x = self.relu(x)
+            out += residual
+            out = self.relu(out)
 
-            return x, cond_vars
+            return out, cond_vars
 
         else:
             residual = x

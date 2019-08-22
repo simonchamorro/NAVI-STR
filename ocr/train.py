@@ -76,7 +76,8 @@ def train(opt):
 
     # data parallel for multi-GPU
     model = torch.nn.DataParallel(model).cuda()
-    model.train()
+    model.eval()
+    film_gen.train()
     if opt.continue_model != '':
         print(f'loading pretrained model from {opt.continue_model}')
         model.load_state_dict(torch.load(opt.continue_model))
@@ -147,6 +148,8 @@ def train(opt):
     while(True):
         # train part
         for p in model.parameters():
+            p.requires_grad = False
+        for p in film_gen.parameters():
             p.requires_grad = True
         image_tensors, labels = train_dataset.get_batch()
 
@@ -177,6 +180,7 @@ def train(opt):
             cost = criterion(preds.view(-1, preds.shape[-1]), target.contiguous().view(-1))
 
         model.zero_grad()
+        film_gen.zero_grad()
         cost.backward()
         torch.nn.utils.clip_grad_norm_(model.parameters(), opt.grad_clip)  # gradient clipping with 5 (Default)
         optimizer.step()
@@ -198,10 +202,11 @@ def train(opt):
                 loss_avg.reset()
 
                 model.eval()
+                film_gen.eval()
                 valid_loss, current_accuracy, current_norm_ED, current_int_dist, preds, labels, infer_time, length_of_data = validation(
                     model, criterion, valid_loader, converter, opt, film_gen=film_gen)
-                model.train()
-
+                model.eval()
+                film_gen.train()
                 for pred, gt in zip(preds[:5], labels[:5]):
                     if 'Attn' in opt.Prediction:
                         pred = pred[:pred.find('[s]')]

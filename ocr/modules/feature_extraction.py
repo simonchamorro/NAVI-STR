@@ -149,17 +149,11 @@ class BasicBlock(nn.Module):
             cond_vars = cond_vars[:, 4 * dim:]
 
             out = self.conv1(x)
-            if gammas1 is not None:
-                out = FiLM()(out, gammas1, betas1)
-            else:
-                out = self.bn1(out)
+            out = FiLM()(out, gammas1, betas1)
             out = self.relu(out)
 
             out = self.conv2(out)
-            if gammas2 is not None:
-                out = FiLM()(out, gammas2, betas2)
-            else:
-                out = self.bn2(out)
+            out = FiLM()(out, gammas2, betas2)
 
             if self.downsample is not None:
                 residual = self.downsample(x)
@@ -250,7 +244,7 @@ class ResNet(nn.Module):
         x = self.maxpool1(x)
 
         if type(cond_params) == torch.Tensor and len(cond_params.size()) != 0:
-            x, _ = self.layer1((x, cond_params))
+            x, cond_params = self.layer1((x, cond_params))
         else:
             x = self.layer1(x)
 
@@ -260,7 +254,7 @@ class ResNet(nn.Module):
         x = self.maxpool2(x)
 
         if type(cond_params) == torch.Tensor and len(cond_params.size()) != 0:
-           x, _ = self.layer2((x, cond_params))
+           x, cond_params = self.layer2((x, cond_params))
         else:
             x = self.layer2(x)
 
@@ -270,7 +264,7 @@ class ResNet(nn.Module):
 
         x = self.maxpool3(x)
         if type(cond_params) == torch.Tensor and len(cond_params.size()) != 0:
-            x, _ = self.layer3((x, cond_params))
+            x, cond_params = self.layer3((x, cond_params))
         else:
             x = self.layer3(x)
 
@@ -279,7 +273,7 @@ class ResNet(nn.Module):
         x = self.relu(x)
 
         if type(cond_params) == torch.Tensor and len(cond_params.size()) != 0:
-            x, _ = self.layer4((x, cond_params))
+            x, cond_params = self.layer4((x, cond_params))
         else:
             x = self.layer4(x)
 

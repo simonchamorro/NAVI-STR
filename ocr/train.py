@@ -185,7 +185,6 @@ def train(opt):
 
         model.zero_grad()
         film_gen.zero_grad()
-        import pdb; pdb.set_trace()
         cost.backward()
         torch.nn.utils.clip_grad_norm_(model.parameters(), opt.grad_clip)  # gradient clipping with 5 (Default)
         optimizer.step()

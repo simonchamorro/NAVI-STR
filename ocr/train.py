@@ -171,7 +171,6 @@ def train(opt):
 
         else:
             cond_params = None
-            import pdb; pdb.set_trace()
             if opt.apply_film:
                 cond_params = film_gen(cond_text)
 

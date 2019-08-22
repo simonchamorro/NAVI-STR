@@ -139,6 +139,8 @@ class BasicBlock(nn.Module):
             residual = x[0]
             cond_vars = x[1]
             x = x[0]
+            import pdb; pdb.set_trace()
+
             dim = int(cond_vars.shape[1]/4)
             gammas1 = cond_vars[:, :dim]
             betas1 = cond_vars[:, dim: 2 * dim]
@@ -247,7 +249,7 @@ class ResNet(nn.Module):
         x = self.maxpool1(x)
 
         if cond_params is not None:
-            x, _ = self.layer1((x, cond_params[0]))
+            x, _ = self.layer1((x, cond_params))
         else:
             x = self.layer1(x)
 
@@ -257,7 +259,7 @@ class ResNet(nn.Module):
         x = self.maxpool2(x)
 
         if cond_params is not None:
-           x, _ = self.layer2((x, cond_params[1]))
+           x, _ = self.layer2((x, cond_params))
         else:
             x = self.layer2(x)
 
@@ -267,7 +269,7 @@ class ResNet(nn.Module):
 
         x = self.maxpool3(x)
         if cond_params is not None:
-            x, _ = self.layer3((x, cond_params[2]))
+            x, _ = self.layer3((x, cond_params))
         else:
             x = self.layer3(x)
 
@@ -276,7 +278,7 @@ class ResNet(nn.Module):
         x = self.relu(x)
 
         if cond_params is not None:
-            x, _ = self.layer4((x, cond_params[3]))
+            x, _ = self.layer4((x, cond_params))
         else:
             x = self.layer4(x)
 

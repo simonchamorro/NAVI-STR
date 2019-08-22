@@ -55,7 +55,7 @@ def train(opt):
     model = Model(opt)
 
     output_channel_block = [int(opt.output_channel / 4), int(opt.output_channel / 2), opt.output_channel, opt.output_channel]
-    import pdb; pdb.set_trace()
+
     film_gen = FiLMGen(input_dim=200, emb_dim=1000, cond_feat_size=18944).cuda()
 
     print('model input parameters', opt.imgH, opt.imgW, opt.num_fiducial, opt.input_channel, opt.output_channel,
@@ -171,6 +171,7 @@ def train(opt):
 
         else:
             cond_params = None
+            import pdb; pdb.set_trace()
             if opt.apply_film:
                 cond_params.append(film_gen(cond_text))
 

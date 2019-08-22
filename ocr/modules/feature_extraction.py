@@ -140,7 +140,6 @@ class BasicBlock(nn.Module):
             residual = x[0]
             cond_vars = x[1]
             x = x[0]
-            import pdb; pdb.set_trace()
 
             dim = int(self.bn1.weight.shape[0])
             gammas1 = cond_vars[:, :dim]

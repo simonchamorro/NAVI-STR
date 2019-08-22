@@ -73,6 +73,7 @@ class Model(nn.Module):
             input = self.Transformation(input)
 
         """ Feature extraction stage """
+        import pdb; pdb.set_trace()
         try:
             visual_feature = self.FeatureExtraction(input, cond_params)
         except Exception:

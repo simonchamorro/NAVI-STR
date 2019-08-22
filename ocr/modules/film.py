@@ -22,12 +22,3 @@ class FiLMGen(nn.Module):
     def forward(self, x):
         x = self.layers(x)
         return x
-
-class FiLM(nn.Module):
-  """
-  A Feature-wise Linear Modulation Layer from
-  'FiLM: Visual Reasoning with a General Conditioning Layer'
-  """
-  def forward(self, x, gammas, betas):
-    x = (gammas.view(x.shape[0], x.shape[1], 1, 1) * x) + betas.view(x.shape[0], x.shape[1], 1, 1)
-    return x

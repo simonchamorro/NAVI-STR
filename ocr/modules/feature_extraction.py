@@ -1,7 +1,6 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from modules.film import FiLM
 
 class VGG_FeatureExtractor(nn.Module):
     """ FeatureExtractor of CRNN (https://arxiv.org/pdf/1507.05717.pdf) """
@@ -149,11 +148,12 @@ class BasicBlock(nn.Module):
             cond_vars = cond_vars[:, 4 * dim:]
 
             out = self.conv1(x)
-            out = FiLM()(out, gammas1, betas1)
+            import pdb; pdb.set_trace()
+            out = (gammas1.view(x.shape[0], x.shape[1], 1, 1) * x) + betas1.view(x.shape[0], x.shape[1], 1, 1)
             out = self.relu(out)
 
             out = self.conv2(out)
-            out = FiLM()(out, gammas2, betas2)
+            out = (gammas2.view(x.shape[0], x.shape[1], 1, 1) * x) + betas2.view(x.shape[0], x.shape[1], 1, 1)
 
             if self.downsample is not None:
                 residual = self.downsample(x)

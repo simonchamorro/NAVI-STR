@@ -141,7 +141,7 @@ class BasicBlock(nn.Module):
             cond_vars = x[1]
             x = x[0]
 
-            dim = int(cond_vars.shape[1]/4)
+            dim = int(self.bn1.weight.shape[0])
             import pdb; pdb.set_trace()
             gammas1 = cond_vars[:, :dim]
             betas1 = cond_vars[:, dim: 2 * dim]

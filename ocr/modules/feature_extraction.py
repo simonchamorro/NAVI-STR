@@ -247,7 +247,7 @@ class ResNet(nn.Module):
         x = self.bn0_2(x)
         x = self.relu(x)
         x = self.maxpool1(x)
-
+        import pdb; pdb.set_trace()
         if any(cond_params):
             x, _ = self.layer1((x, cond_params))
         else:

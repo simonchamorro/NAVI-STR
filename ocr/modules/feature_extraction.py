@@ -248,7 +248,7 @@ class ResNet(nn.Module):
         x = self.relu(x)
         x = self.maxpool1(x)
 
-        if cond_params is not None:
+        if any(cond_params):
             x, _ = self.layer1((x, cond_params))
         else:
             x = self.layer1(x)
@@ -258,7 +258,7 @@ class ResNet(nn.Module):
         x = self.relu(x)
         x = self.maxpool2(x)
 
-        if cond_params is not None:
+        if any(cond_params):
            x, _ = self.layer2((x, cond_params))
         else:
             x = self.layer2(x)
@@ -268,7 +268,7 @@ class ResNet(nn.Module):
         x = self.relu(x)
 
         x = self.maxpool3(x)
-        if cond_params is not None:
+        if any(cond_params):
             x, _ = self.layer3((x, cond_params))
         else:
             x = self.layer3(x)
@@ -277,7 +277,7 @@ class ResNet(nn.Module):
         x = self.bn3(x)
         x = self.relu(x)
 
-        if cond_params is not None:
+        if any(cond_params):
             x, _ = self.layer4((x, cond_params))
         else:
             x = self.layer4(x)

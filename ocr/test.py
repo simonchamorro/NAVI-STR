@@ -43,7 +43,7 @@ def benchmark_all_eval(model, criterion, converter, opt, calculate_infer_time=Fa
         evaluation_batch_size = opt.batch_size
 
     list_accuracy = []
-    total_forward_time = 0 
+    total_forward_time = 0
     total_evaluation_data_number = 0
     total_correct_number = 0
     print('-' * 80)
@@ -82,7 +82,7 @@ def benchmark_all_eval(model, criterion, converter, opt, calculate_infer_time=Fa
     return None
 
 
-def validation(model, criterion, evaluation_loader, converter, opt, eval_data=None, film_gens=None):
+def validation(model, criterion, evaluation_loader, converter, opt, eval_data=None, film_gen=None):
     """ validation or evaluation """
     for p in model.parameters():
         p.requires_grad = False
@@ -133,8 +133,7 @@ def validation(model, criterion, evaluation_loader, converter, opt, eval_data=No
             cond_text = cond_house_numbers.view(-1, num_hn * 40).cuda()
             cond_params = []
             if opt.apply_film:
-                for film_gen in film_gens:
-                    cond_params.append(film_gen(cond_text))
+                cond_params.append(film_gen(cond_text))
 
             preds = model(image, text_for_pred, cond_params, is_train=False)
             forward_time = time.time() - start_time
@@ -157,18 +156,18 @@ def validation(model, criterion, evaluation_loader, converter, opt, eval_data=No
             if 'Attn' in opt.Prediction:
                 pred = pred[:pred.find('[s]')]  # prune after "end of sentence" token ([s])
                 gt = gt[:gt.find('[s]')]
-            
+
             if opt.ed_condition:
                 text = [str(num) for num in text]
                 if gt not in text:
                     text[0] = gt
                     random.shuffle(text)
-                
+
                 distances = {}
                 for word in text:
                     d = edit_distance(word, pred)
                     distances[word] = d
-                pred = min(distances, key=distances.get) 
+                pred = min(distances, key=distances.get)
 
             if pred == gt:
                 n_correct += 1
@@ -206,13 +205,10 @@ def test(opt):
     # load model
     print('loading pretrained model from %s' % opt.saved_model)
     model.load_state_dict(torch.load(opt.saved_model))
-    film_gens = nn.ModuleList([])
-    output_channel_block = [int(opt.output_channel / 4), int(opt.output_channel / 2), opt.output_channel, opt.output_channel]
-    for output_channel in output_channel_block:
-        film_gens.append(FiLMGen(input_dim=200, module_dim=output_channel).cuda())
+    film_gen = FiLMGen(input_dim=200, emb_dim=1000, cond_feat_size=18944).cuda()
+
     if opt.apply_film:
-        for i, film_gen in enumerate(film_gens):
-            film_gen.load_state_dict(torch.load(f'./{"/".join(opt.saved_model.split("/")[:-1])}/best_accuracy_film_gen_{i}.pth'))
+        film_gen.load_state_dict(torch.load(f'./{"/".join(opt.saved_model.split("/")[:-1])}/best_accuracy_film_gen.pth'))
     # print(model)
 
     """ keep evaluation model and result logs """
@@ -241,7 +237,7 @@ def test(opt):
             collate_fn=AlignCollate_evaluation, pin_memory=True)
 
         _, accuracy_by_best_model, norm_ED, int_dist, _, _, _, _ = validation(
-            model, criterion, evaluation_loader, converter, opt, eval_data, film_gens=film_gens)
+            model, criterion, evaluation_loader, converter, opt, eval_data, film_gen=film_gen)
 
         print(accuracy_by_best_model)
         with open('./result/{0}/log_evaluation.txt'.format(opt.experiment_name), 'w') as log:

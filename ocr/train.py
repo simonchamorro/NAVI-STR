@@ -54,8 +54,6 @@ def train(opt):
         opt.input_channel = 3
     model = Model(opt)
 
-    output_channel_block = [int(opt.output_channel / 4), int(opt.output_channel / 2), opt.output_channel, opt.output_channel]
-
     film_gen = FiLMGen(input_dim=200, emb_dim=1000, cond_feat_size=18944).cuda()
 
     print('model input parameters', opt.imgH, opt.imgW, opt.num_fiducial, opt.input_channel, opt.output_channel,
@@ -201,7 +199,7 @@ def train(opt):
 
                 model.eval()
                 valid_loss, current_accuracy, current_norm_ED, current_int_dist, preds, labels, infer_time, length_of_data = validation(
-                    model, criterion, valid_loader, converter, opt, film_gens=film_gens)
+                    model, criterion, valid_loader, converter, opt, film_gen=film_gen)
                 model.train()
 
                 for pred, gt in zip(preds[:5], labels[:5]):
@@ -226,8 +224,7 @@ def train(opt):
                     patience = opt.patience
                     best_accuracy = current_accuracy
                     torch.save(model.state_dict(), f'./saved_models/{opt.experiment_name}/best_accuracy.pth')
-                    for i, film_gen in enumerate(film_gens):
-                        torch.save(film_gen.state_dict(), f'./saved_models/{opt.experiment_name}/best_accuracy_film_gen_{i}.pth')
+                    torch.save(film_gen.state_dict(), f'./saved_models/{opt.experiment_name}/best_accuracy_film_gen.pth')
                 else:
                     patience -= 1
                     if patience == 0:

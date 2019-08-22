@@ -7,7 +7,6 @@ class FiLMGen(nn.Module):
         cond_feat_size=18944, # 4 * 128 + 8 * 256 + 20 * 512 + 12 * 512
         emb_dim=1000):
         super(FiLMGen, self).__init__()
-        self.hn_emb = nn.Linear()
         self.input_dim = input_dim
         self.emb_dim = emb_dim
         self.cond_feat_size = cond_feat_size  # gammas and betas

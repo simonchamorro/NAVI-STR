@@ -73,7 +73,7 @@ class Model(nn.Module):
             input = self.Transformation(input)
 
         """ Feature extraction stage """
-        if cond_params:
+        if any(cond_params):
             visual_feature = self.FeatureExtraction(input, cond_params)
         else:
             visual_feature = self.FeatureExtraction(input)

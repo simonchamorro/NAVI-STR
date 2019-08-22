@@ -98,6 +98,10 @@ def train(opt):
     for p in filter(lambda p: p.requires_grad, model.parameters()):
         filtered_parameters.append(p)
         params_num.append(np.prod(p.size()))
+    for p in filter(lambda p: p.requires_grad, film_gen.parameters()):
+        filtered_parameters.append(p)
+        params_num.append(np.prod(p.size()))
+
     print('Trainable params num : ', sum(params_num))
     # [print(name, p.numel()) for name, p in filter(lambda p: p[1].requires_grad, model.named_parameters())]
 

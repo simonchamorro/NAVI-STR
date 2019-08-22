@@ -187,6 +187,7 @@ def train(opt):
         film_gen.zero_grad()
         cost.backward()
         torch.nn.utils.clip_grad_norm_(model.parameters(), opt.grad_clip)  # gradient clipping with 5 (Default)
+        import pdb; pdb.set_trace()
         optimizer.step()
         print(f"cost: {cost.item()}")
         loss_avg.add(cost)

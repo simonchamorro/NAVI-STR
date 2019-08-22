@@ -1,3 +1,4 @@
+import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from modules.film import FiLM
@@ -59,7 +60,7 @@ class ResNet_FeatureExtractor(nn.Module):
         self.ConvNet = ResNet(input_channel, output_channel, BasicBlock, [1, 2, 5, 3])
 
     def forward(self, input, cond_params=None):
-        if cond_params:
+        if type(cond_params) == torch.Tensor and len(cond_params.size()) != 0:
             return self.ConvNet(input, cond_params)
         else:
             return self.ConvNet(input)
@@ -139,7 +140,6 @@ class BasicBlock(nn.Module):
             residual = x[0]
             cond_vars = x[1]
             x = x[0]
-            import pdb; pdb.set_trace()
 
             dim = int(cond_vars.shape[1]/4)
             gammas1 = cond_vars[:, :dim]
@@ -247,9 +247,10 @@ class ResNet(nn.Module):
         x = self.bn0_2(x)
         x = self.relu(x)
         x = self.maxpool1(x)
-        try:
+
+        if type(cond_params) == torch.Tensor and len(cond_params.size()) != 0:
             x, _ = self.layer1((x, cond_params))
-        except Exception:
+        else:
             x = self.layer1(x)
 
         x = self.conv1(x)
@@ -257,9 +258,9 @@ class ResNet(nn.Module):
         x = self.relu(x)
         x = self.maxpool2(x)
 
-        try:
+        if type(cond_params) == torch.Tensor and len(cond_params.size()) != 0:
            x, _ = self.layer2((x, cond_params))
-        except Exception:
+        else:
             x = self.layer2(x)
 
         x = self.conv2(x)
@@ -267,18 +268,18 @@ class ResNet(nn.Module):
         x = self.relu(x)
 
         x = self.maxpool3(x)
-        try:
+        if type(cond_params) == torch.Tensor and len(cond_params.size()) != 0:
             x, _ = self.layer3((x, cond_params))
-        except Exception:
+        else:
             x = self.layer3(x)
 
         x = self.conv3(x)
         x = self.bn3(x)
         x = self.relu(x)
 
-        try:
+        if type(cond_params) == torch.Tensor and len(cond_params.size()) != 0:
             x, _ = self.layer4((x, cond_params))
-        except Exception:
+        else:
             x = self.layer4(x)
 
         x = self.conv4_1(x)

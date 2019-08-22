@@ -247,10 +247,9 @@ class ResNet(nn.Module):
         x = self.bn0_2(x)
         x = self.relu(x)
         x = self.maxpool1(x)
-        import pdb; pdb.set_trace()
-        if any(cond_params):
+        try:
             x, _ = self.layer1((x, cond_params))
-        else:
+        except Exception:
             x = self.layer1(x)
 
         x = self.conv1(x)
@@ -258,9 +257,9 @@ class ResNet(nn.Module):
         x = self.relu(x)
         x = self.maxpool2(x)
 
-        if any(cond_params):
+        try:
            x, _ = self.layer2((x, cond_params))
-        else:
+        except Exception:
             x = self.layer2(x)
 
         x = self.conv2(x)
@@ -268,18 +267,18 @@ class ResNet(nn.Module):
         x = self.relu(x)
 
         x = self.maxpool3(x)
-        if any(cond_params):
+        try:
             x, _ = self.layer3((x, cond_params))
-        else:
+        except Exception:
             x = self.layer3(x)
 
         x = self.conv3(x)
         x = self.bn3(x)
         x = self.relu(x)
 
-        if any(cond_params):
+        try:
             x, _ = self.layer4((x, cond_params))
-        else:
+        except Exception:
             x = self.layer4(x)
 
         x = self.conv4_1(x)

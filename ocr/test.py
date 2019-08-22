@@ -8,6 +8,7 @@ import re
 import torch
 import torch.backends.cudnn as cudnn
 import torch.utils.data
+import torch.nn as nn
 import torchvision
 import numpy as np
 import pandas as pd
@@ -205,7 +206,7 @@ def test(opt):
     # load model
     print('loading pretrained model from %s' % opt.saved_model)
     model.load_state_dict(torch.load(opt.saved_model))
-    film_gens = []
+    film_gens = nn.ModuleList([])
     output_channel_block = [int(opt.output_channel / 4), int(opt.output_channel / 2), opt.output_channel, opt.output_channel]
     for output_channel in output_channel_block:
         film_gens.append(FiLMGen(input_dim=200, module_dim=output_channel).cuda())

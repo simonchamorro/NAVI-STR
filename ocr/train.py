@@ -15,6 +15,7 @@ import torch.backends.cudnn as cudnn
 import torch.nn.init as init
 import torch.optim as optim
 import torch.utils.data
+from torch import nn
 import numpy as np
 import pandas as pd
 import random
@@ -52,11 +53,10 @@ def train(opt):
     if opt.rgb:
         opt.input_channel = 3
     model = Model(opt)
-    
+
     output_channel_block = [int(opt.output_channel / 4), int(opt.output_channel / 2), opt.output_channel, opt.output_channel]
-    film_gens = []
-    for output_channel in output_channel_block:
-        film_gens.append(FiLMGen(input_dim=200, module_dim=output_channel).cuda())
+    import pdb; pdb.set_trace()
+    film_gen = FiLMGen(input_dim=200, emb_dim=1000, cond_feat_size=18944).cuda()
 
     print('model input parameters', opt.imgH, opt.imgW, opt.num_fiducial, opt.input_channel, opt.output_channel,
           opt.hidden_size, opt.num_class, opt.batch_max_length, opt.Transformation, opt.FeatureExtraction,
@@ -172,9 +172,7 @@ def train(opt):
         else:
             cond_params = None
             if opt.apply_film:
-                cond_params = []
-                for film_gen in film_gens:
-                    cond_params.append(film_gen(cond_text))
+                cond_params.append(film_gen(cond_text))
 
             preds = model(image, text, cond_params)
             target = text[:, 1:]  # without [GO] Symbol

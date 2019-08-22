@@ -3,19 +3,20 @@ from torch import nn
 
 class FiLMGen(nn.Module):
     def __init__(self,
-        input_dim=40 * 20 + 7 * 4,
-   		module_num_layers=2, # sum [1, 2, 5, 3]
-    	module_dim=512):
+        input_dim=200,
+        cond_feat_size=18944, # 4 * 128 + 8 * 256 + 20 * 512 + 12 * 512
+        emb_dim=1000):
         super(FiLMGen, self).__init__()
-        self.module_num_layers = module_num_layers
-        self.module_dim = module_dim
-        self.cond_feat_size = 2 * self.module_num_layers * self.module_dim  # gammas and betas
+        self.hn_emb = nn.Linear()
+        self.input_dim = input_dim
+        self.emb_dim = emb_dim
+        self.cond_feat_size = cond_feat_size  # gammas and betas
         self.layers = nn.Sequential(
-            nn.Linear(input_dim, 1000),
+            nn.Linear(self.input_dim, self.emb_dim),
             nn.ReLU(),
-            nn.Linear(1000, 1000),
+            nn.Linear(self.emb_dim, self.emb_dim),
             nn.ReLU(),
-            nn.Linear(1000, self.cond_feat_size)
+            nn.Linear(self.emb_dim, self.cond_feat_size)
         )
 
 

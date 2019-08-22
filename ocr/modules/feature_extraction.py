@@ -164,7 +164,7 @@ class BasicBlock(nn.Module):
             out = self.relu(out)
 
             return out, cond_vars
-        
+
         else:
             residual = x
             out = self.conv1(x)

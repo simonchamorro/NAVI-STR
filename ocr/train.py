@@ -173,7 +173,7 @@ def train(opt):
             cond_params = None
             import pdb; pdb.set_trace()
             if opt.apply_film:
-                cond_params.append(film_gen(cond_text))
+                cond_params = film_gen(cond_text)
 
             preds = model(image, text, cond_params)
             target = text[:, 1:]  # without [GO] Symbol

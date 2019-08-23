@@ -119,12 +119,13 @@ class GRCL_unit(nn.Module):
 class BasicBlock(nn.Module):
     expansion = 1
 
-    def __init__(self, inplanes, planes, stride=1, downsample=None):
+    def __init__(self, inplanes, planes, stride=1, downsample=None, use_film=False):
         super(BasicBlock, self).__init__()
+        affine = not use_film
         self.conv1 = self._conv3x3(inplanes, planes)
-        self.bn1 = nn.BatchNorm2d(planes)
+        self.bn1 = nn.BatchNorm2d(planes, affine=affine)
         self.conv2 = self._conv3x3(planes, planes)
-        self.bn2 = nn.BatchNorm2d(planes)
+        self.bn2 = nn.BatchNorm2d(planes, affine=affine)
         self.relu = nn.ReLU(inplace=True)
         self.downsample = downsample
         self.stride = stride
@@ -148,10 +149,12 @@ class BasicBlock(nn.Module):
             cond_vars = cond_vars[:, 4 * dim:]
 
             out = self.conv1(x)
+            out = self.bn1(out)
             out = (gammas1.view(out.shape[0], out.shape[1], 1, 1) * out) + betas1.view(x.shape[0], out.shape[1], 1, 1)
             out = self.relu(out)
 
             out = self.conv2(out)
+            out = self.bn2(out)
             out = (gammas2.view(out.shape[0], out.shape[1], 1, 1) * out) + betas2.view(out.shape[0], out.shape[1], 1, 1)
 
             if self.downsample is not None:

@@ -98,18 +98,23 @@ def train(opt):
     for p in filter(lambda p: p.requires_grad, model.parameters()):
         filtered_parameters.append(p)
         params_num.append(np.prod(p.size()))
-    for p in filter(lambda p: p.requires_grad, film_gen.parameters()):
-        filtered_parameters.append(p)
-        params_num.append(np.prod(p.size()))
 
+    film_filtered_params = []
+    film_params_num = []
+    for p in filter(lambda p: p.requires_grad, film_gen.parameters()):
+        film_filtered_params.append(p)
+        film_params_num.append(np.prod(p.size()))
+    print(f"FiLM params num: {sum(film_params_num)}")
     print('Trainable params num : ', sum(params_num))
     # [print(name, p.numel()) for name, p in filter(lambda p: p[1].requires_grad, model.named_parameters())]
 
     # setup optimizer
     if opt.adam:
         optimizer = optim.Adam(filtered_parameters, lr=opt.lr, betas=(opt.beta1, 0.999))
+        film_optimizer = optim.Adam(film_filtered_params, lr=opt.film_lr, betas=(opt.beta1, 0.999))
     else:
         optimizer = optim.Adadelta(filtered_parameters, lr=opt.lr, rho=opt.rho, eps=opt.eps)
+        film_optimizer = optim.Adadelta(film_filtered_params, lr=opt.film_lr, rho=opt.rho, eps=opt.eps)
     print("Optimizer:")
     print(optimizer)
     """ final options """
@@ -188,6 +193,7 @@ def train(opt):
         cost.backward()
         torch.nn.utils.clip_grad_norm_(model.parameters(), opt.grad_clip)  # gradient clipping with 5 (Default)
         optimizer.step()
+        film_optimizer.step()
         print(f"cost: {cost.item()}")
         loss_avg.add(cost)
 
@@ -273,6 +279,7 @@ if __name__ == '__main__':
     parser.add_argument('--continue_model', default='', help="path to model to continue training")
     parser.add_argument('--adam', action='store_true', help='Whether to use adam (default is Adadelta)')
     parser.add_argument('--lr', type=float, default=1, help='learning rate, default=1.0 for Adadelta')
+    parser.add_argument('--film_lr', type=float, default=1, help='learning rate, default=1.0 for Adadelta')
     parser.add_argument('--beta1', type=float, default=0.9, help='beta1 for adam. default=0.9')
     parser.add_argument('--rho', type=float, default=0.95, help='decay rate rho for Adadelta. default=0.95')
     parser.add_argument('--eps', type=float, default=1e-8, help='eps for Adadelta. default=1e-8')

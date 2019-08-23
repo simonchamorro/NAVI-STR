@@ -119,13 +119,18 @@ class GRCL_unit(nn.Module):
 class BasicBlock(nn.Module):
     expansion = 1
 
-    def __init__(self, inplanes, planes, stride=1, downsample=None, use_film=False):
+    def __init__(self, inplanes, planes, stride=1, downsample=None, use_film=True):
         super(BasicBlock, self).__init__()
-        affine = not use_film
         self.conv1 = self._conv3x3(inplanes, planes)
-        self.bn1 = nn.BatchNorm2d(planes, affine=affine)
+        self.bn1 = nn.BatchNorm2d(planes)
+        if use_film:
+            self.bn1.weight.requires_grad = False
+            self.bn1.bias.requires_grad = False
         self.conv2 = self._conv3x3(planes, planes)
-        self.bn2 = nn.BatchNorm2d(planes, affine=affine)
+        self.bn2 = nn.BatchNorm2d(planes)
+        if use_film:
+            self.bn2.weight.requires_grad = False
+            self.bn2.bias.requires_grad = False
         self.relu = nn.ReLU(inplace=True)
         self.downsample = downsample
         self.stride = stride

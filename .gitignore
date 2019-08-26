@@ -1,7 +1,11 @@
 *.png
 *.weights
-*__pycache__*
+*__pycache__/
 *.pth
+.DS_Store
+*.egg-info/
+*.egg
+
 PyTorch-YOLOv3/logs/*
 PyTorch-YOLOv3/checkpoints/*
 PyTorch-YOLOv3/weights/darknet53.conv.74

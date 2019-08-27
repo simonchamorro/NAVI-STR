@@ -1,11 +1,15 @@
 # NAVI-STR
 Scene Text Recognition pipeline for NAVI (Navigational Assistant for the Visually Impaired)
 
-## Installation
-##### Clone and install requirements
-    $ git clone https://github.com/simonchamorro/NAVI-STR
-    $ cd NAVI-STR
-    $ pip install -r requirements.txt
+## Requirements
+
+In order to install requirements, follow:
+
+```bash
+git clone https://github.com/simonchamorro/NAVI-STR
+cd NAVI-STR
+pip install -e .
+```
 
 ## Pipeline
 1. Scene text detection using yolo implementation from https://github.com/eriklindernoren/PyTorch-YOLOv3

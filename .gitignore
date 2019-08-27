@@ -10,7 +10,8 @@ PyTorch-YOLOv3/logs/*
 PyTorch-YOLOv3/checkpoints/*
 PyTorch-YOLOv3/weights/darknet53.conv.74
 PyTorch-YOLOv3/data/coco
-ocr/pths
-ocr/result
-ocr/saved_models
-
+ocr/pths/
+ocr/result/
+ocr/saved_models/
+data/processed/
+data/raw/

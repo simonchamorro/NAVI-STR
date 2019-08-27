@@ -148,8 +148,10 @@ class GridGenerator(nn.Module):
         batch_size = batch_C_prime.size(0)
         batch_inv_delta_C = self.inv_delta_C.repeat(batch_size, 1, 1)
         batch_P_hat = self.P_hat.repeat(batch_size, 1, 1)
-        batch_C_prime_with_zeros = torch.cat((batch_C_prime, torch.zeros(
-            batch_size, 3, 2).float().cuda()), dim=1)  # batch_size x F+3 x 2
+        z = torch.zeros(batch_size, 3, 2).float()
+        if torch.cuda.is_available():
+            z.cuda()
+        batch_C_prime_with_zeros = torch.cat((batch_C_prime, z), dim=1)  # batch_size x F+3 x 2
         batch_T = torch.bmm(batch_inv_delta_C, batch_C_prime_with_zeros)  # batch_size x F+3 x 2
         batch_P_prime = torch.bmm(batch_P_hat, batch_T)  # batch_size x n x 2
         return batch_P_prime  # batch_size x n x 2

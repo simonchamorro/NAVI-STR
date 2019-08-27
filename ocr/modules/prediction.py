@@ -15,7 +15,9 @@ class Attention(nn.Module):
     def _char_to_onehot(self, input_char, onehot_dim=38):
         input_char = input_char.unsqueeze(1)
         batch_size = input_char.size(0)
-        one_hot = torch.cuda.FloatTensor(batch_size, onehot_dim).zero_()
+        one_hot = torch.FloatTensor(batch_size, onehot_dim).zero_()
+        if torch.cuda.is_available():
+            one_hot.cuda()
         one_hot = one_hot.scatter_(1, input_char, 1)
         return one_hot
 
@@ -29,9 +31,15 @@ class Attention(nn.Module):
         batch_size = batch_H.size(0)
         num_steps = batch_max_length + 1  # +1 for [s] at end of sentence.
 
-        output_hiddens = torch.cuda.FloatTensor(batch_size, num_steps, self.hidden_size).fill_(0)
-        hidden = (torch.cuda.FloatTensor(batch_size, self.hidden_size).fill_(0),
-                  torch.cuda.FloatTensor(batch_size, self.hidden_size).fill_(0))
+        output_hiddens = torch.FloatTensor(batch_size, num_steps, self.hidden_size).fill_(0)
+        if torch.cuda.is_available():
+            output_hiddens.cuda()
+        a = torch.FloatTensor(batch_size, self.hidden_size).fill_(0)
+        b = torch.FloatTensor(batch_size, self.hidden_size).fill_(0)
+        if torch.cuda.is_available():
+            a.cuda()
+            b.cuda()
+        hidden = (a, b)
 
         if is_train:
             for i in range(num_steps):
@@ -43,8 +51,11 @@ class Attention(nn.Module):
             probs = self.generator(output_hiddens)
 
         else:
-            targets = torch.cuda.LongTensor(batch_size).fill_(0)  # [GO] token
-            probs = torch.cuda.FloatTensor(batch_size, num_steps, self.num_classes).fill_(0)
+            targets = torch.LongTensor(batch_size).fill_(0)  # [GO] token
+            probs = torch.FloatTensor(batch_size, num_steps, self.num_classes).fill_(0)
+            if torch.cuda.is_available():
+                targets.cuda()
+                probs.cuda()
 
             for i in range(num_steps):
                 char_onehots = self._char_to_onehot(targets, onehot_dim=self.num_classes)

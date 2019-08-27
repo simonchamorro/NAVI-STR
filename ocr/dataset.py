@@ -98,8 +98,7 @@ def hierarchical_dataset(root, opt, select_data='/'):
                     break
 
             if select_flag:
-                # import pdb; pdb.set_trace()
-                print(dirpath)
+                print('dir_path: ', dirpath)
                 dataset = LmdbDataset(dirpath, opt)
                 print(f'sub-directory:\t/{os.path.relpath(dirpath, root)}\t num samples: {len(dataset)}')
                 dataset_list.append(dataset)
@@ -115,7 +114,9 @@ class LmdbDataset(Dataset):
 
         self.root = root
         self.opt = opt
-        self.env = lmdb.open(root, max_readers=32, readonly=True, lock=False, readahead=False, meminit=False)
+
+        self.env = lmdb.open(root, max_readers=32, readonly=True, lock=False,
+                             readahead=False, meminit=False)
         if not self.env:
             print('cannot create lmdb from %s' % (root))
             sys.exit(0)

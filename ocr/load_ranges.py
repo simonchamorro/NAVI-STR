@@ -1,4 +1,3 @@
-import os
 import random
 
 
@@ -10,7 +9,11 @@ def interpolate(min_num, max_num):
         num += 2
     return numbers
 
+
 def find_range(num, street, ranges):
+    '''
+    Find address ranges for a given segment street.
+    '''
     num_range = None
     for segment in ranges:
         if street == segment['street'] and num >= segment['min'] \
@@ -21,7 +24,12 @@ def find_range(num, street, ranges):
         print(num)
     return num_range
 
+
 def get_random(num, street, qty):
+    '''
+    Get random neighboor nb address in the street segment.
+    Note that you can get the actual address.
+    '''
     ranges = load_ranges('./data/address_ranges.txt')
     random_range = find_range(num, street, ranges)
     if qty <= len(random_range):
@@ -30,6 +38,7 @@ def get_random(num, street, qty):
     else:
         random_range = random.choices(random_range, k=qty)
         return random_range
+
 
 def get_sequence(num, street, qty):
     ranges = load_ranges('./data/address_ranges.txt')
@@ -43,6 +52,7 @@ def get_sequence(num, street, qty):
         sequence = random.choices(segment2, k=qty)
         sequence.sort(reverse=True)
     return sequence
+
 
 def load_ranges(filename):
     ranges = []

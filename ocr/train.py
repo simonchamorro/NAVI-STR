@@ -3,6 +3,7 @@ try:
     comet_loaded = True
 except ImportError:
     comet_loaded = False
+
 import os
 import sys
 import time
@@ -18,7 +19,10 @@ import torch.utils.data
 from torch import nn
 import numpy as np
 import pandas as pd
-import random
+
+from easydict import EasyDict as edict
+import skopt
+from skopt.space import Real, Integer, Categorical
 
 from utils import CTCLabelConverter, AttnLabelConverter, Averager
 from dataset import hierarchical_dataset, AlignCollate, Batch_Balanced_Dataset
@@ -28,17 +32,155 @@ from test import validation
 from SEVN_gym.envs.utils import convert_street_name, convert_house_numbers
 from load_ranges import get_random, get_sequence
 
+
+def parse_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--experiment_name',
+                        help='where to store logs and models')
+    parser.add_argument('--train_data',
+                        required=True,
+                        help='path to training dataset')
+    parser.add_argument('--valid_data',
+                        required=True,
+                        help='path to validation dataset')
+    parser.add_argument('--manualSeed',
+                        type=int, default=1111,
+                        help='for random seed setting')
+    parser.add_argument('--workers',
+                        type=int, default=4,
+                        help='number of data loading workers')
+    parser.add_argument('--batch_size',
+                        type=int, default=192,
+                        help='input batch size')
+    parser.add_argument('--num_iter',
+                        type=int, default=300000,
+                        help='number of iterations to train for')
+    parser.add_argument('--valInterval',
+                        type=int, default=10,
+                        help='interval between each validation')
+    parser.add_argument('--continue_model',
+                        default='',
+                        help='path to model to continue training')
+    parser.add_argument('--adam',
+                        action='store_true',
+                        help='whether to use adam (default is Adadelta)')
+    parser.add_argument('--lr',
+                        type=str, default='1',
+                        help='learning rate, default=1.0 for Adadelta')
+    parser.add_argument('--film_lr',
+                        type=str, default='1',
+                        help='film learning rate, default=1.0 for Adadelta')
+    parser.add_argument('--beta1',
+                        type=float, default=0.9,
+                        help='beta1 for adam. default=0.9')
+    parser.add_argument('--rho',
+                        type=float, default=0.95,
+                        help='decay rate rho for Adadelta. default=0.95')
+    parser.add_argument('--eps',
+                        type=float, default=1e-8,
+                        help='eps for Adadelta. default=1e-8')
+    parser.add_argument('--grad_clip',
+                        type=float, default=5,
+                        help='gradient clipping value. default=5')
+    parser.add_argument('--patience',
+                        type=float, default=10,
+                        help='patience value for early stopping.')
+    """ Data processing """
+    parser.add_argument('--select_data',
+                        type=str, default='MJ-ST',
+                        help='''select training data (default is MJ-ST, which
+                                means MJ and ST used as training data)''')
+    parser.add_argument('--batch_ratio',
+                        type=str, default='0.5-0.5',
+                        help='''assign ratio for each selected data in the
+                                batch''')
+    parser.add_argument('--total_data_usage_ratio',
+                        type=str, default='1.0',
+                        help='''total data usage ratio, this ratio is
+                                multiplied to total number of data.''')
+    parser.add_argument('--batch_max_length',
+                        type=int, default=25,
+                        help='maximum-label-length')
+    parser.add_argument('--imgH',
+                        type=int, default=32,
+                        help='the height of the input image')
+    parser.add_argument('--imgW',
+                        type=int, default=100,
+                        help='the width of the input image')
+    parser.add_argument('--rgb',
+                        action='store_true',
+                        help='use rgb input')
+    parser.add_argument('--character',
+                        type=str,
+                        default='0123456789abcdefghijklmnopqrstuvwxyz',
+                        help='character label')
+    parser.add_argument('--sensitive',
+                        action='store_true',
+                        help='for sensitive character mode')
+    parser.add_argument('--PAD',
+                        action='store_true',
+                        help='whether to keep ratio then pad for image resize')
+    """ Model Architecture """
+    parser.add_argument('--Transformation',
+                        type=str, required=True,
+                        help='Transformation stage. None|TPS')
+    parser.add_argument('--FeatureExtraction',
+                        type=str, required=True,
+                        help='FeatureExtraction stage. VGG|RCNN|ResNet')
+    parser.add_argument('--SequenceModeling',
+                        type=str, required=True,
+                        help='SequenceModeling stage. None|BiLSTM')
+    parser.add_argument('--Prediction',
+                        type=str, required=True,
+                        help='Prediction stage. CTC|Attn')
+    parser.add_argument('--num_fiducial',
+                        type=int, default=20,
+                        help='number of fiducial points of TPS-STN')
+    parser.add_argument('--input_channel',
+                        type=int, default=1,
+                        help='''the number of input channel of Feature
+                                extractor''')
+    parser.add_argument('--output_channel',
+                        type=int, default=512,
+                        help='''the number of output channel of Feature
+                                extractor''')
+    parser.add_argument('--hidden_size',
+                        type=int, default=256,
+                        help='the size of the LSTM hidden state')
+    parser.add_argument('--comet',
+                        type=str,
+                        default='mweiss17/navi-str/UcVgpp0wPaprHG4w8MFVMgq7j',
+                        help='Comet logging info')
+    parser.add_argument('--no_comet',
+                        action='store_true',
+                        help='dont use comet')
+    parser.add_argument('--ed_condition',
+                        action='store_true',
+                        help='dont use comet')
+    parser.add_argument('--apply_film',
+                        action='store_true',
+                        help='Apply film to the')
+    parser.add_argument('--skopt',
+                        action='store_true',
+                        help='apply skopt')
+
+    args = parser.parse_args()
+    return args
+
+
 def train(opt):
     """ dataset preparation """
     opt.select_data = opt.select_data.split('-')
     opt.batch_ratio = opt.batch_ratio.split('-')
     train_dataset = Batch_Balanced_Dataset(opt)
 
-    AlignCollate_valid = AlignCollate(imgH=opt.imgH, imgW=opt.imgW, keep_ratio_with_pad=opt.PAD)
+    AlignCollate_valid = AlignCollate(imgH=opt.imgH, imgW=opt.imgW,
+                                      keep_ratio_with_pad=opt.PAD)
     valid_dataset = hierarchical_dataset(root=opt.valid_data, opt=opt)
     valid_loader = torch.utils.data.DataLoader(
         valid_dataset, batch_size=opt.batch_size,
-        shuffle=True,  # 'True' to check training progress with validation function.
+        # 'True' to check training progress with validation function.
+        shuffle=True,
         num_workers=int(opt.workers),
         collate_fn=AlignCollate_valid, pin_memory=True)
     print('-' * 80)
@@ -54,10 +196,14 @@ def train(opt):
         opt.input_channel = 3
     model = Model(opt)
 
-    film_gen = FiLMGen(input_dim=200, emb_dim=1000, cond_feat_size=18944).cuda()
+    film_gen = FiLMGen(input_dim=200, emb_dim=1000, cond_feat_size=18944)
+    if torch.cuda.is_available():
+        film_gen.cuda()
 
-    print('model input parameters', opt.imgH, opt.imgW, opt.num_fiducial, opt.input_channel, opt.output_channel,
-          opt.hidden_size, opt.num_class, opt.batch_max_length, opt.Transformation, opt.FeatureExtraction,
+    print('model input parameters', opt.imgH, opt.imgW, opt.num_fiducial,
+          opt.input_channel, opt.output_channel,
+          opt.hidden_size, opt.num_class, opt.batch_max_length,
+          opt.Transformation, opt.FeatureExtraction,
           opt.SequenceModeling, opt.Prediction)
     # weight initialization
     for name, param in model.named_parameters():
@@ -75,7 +221,9 @@ def train(opt):
             continue
 
     # data parallel for multi-GPU
-    model = torch.nn.DataParallel(model).cuda()
+    model = torch.nn.DataParallel(model)
+    if torch.cuda.is_available():
+        model.cuda()
     model.train()
     film_gen.train()
     if opt.continue_model != '':
@@ -86,9 +234,13 @@ def train(opt):
 
     """ setup loss """
     if 'CTC' in opt.Prediction:
-        criterion = torch.nn.CTCLoss(zero_infinity=True).cuda()
+        criterion = torch.nn.CTCLoss(zero_infinity=True)
+        if torch.cuda.is_available():
+            criterion.cuda()
     else:
-        criterion = torch.nn.CrossEntropyLoss(ignore_index=0).cuda()  # ignore [GO] token = ignore index 0
+        criterion = torch.nn.CrossEntropyLoss(ignore_index=0)
+        if torch.cuda.is_available():
+            criterion.cuda()  # ignore [GO] token = ignore index 0
     # loss averager
     loss_avg = Averager()
 
@@ -168,10 +320,17 @@ def train(opt):
         cond_house_numbers = [get_random(int(img_id.split("_")[0]), img_id.split("_")[1], num_hn) for img_id in ids]
         cond_house_numbers = [convert_house_numbers(n) for l in cond_house_numbers for n in l]
         cond_house_numbers = torch.FloatTensor(cond_house_numbers)
-        cond_text = cond_house_numbers.view(-1, num_hn * 40).cuda()
-        image = image_tensors.cuda()
+        cond_text = cond_house_numbers.view(-1, num_hn * 40)
+
+        image = image_tensors
+
+        # labels is a list of house numbers
         text, length = converter.encode(labels)
         batch_size = image.size(0)
+
+        if torch.cuda.is_available():
+            cond_text.cuda()
+            image.cuda()
 
         if 'CTC' in opt.Prediction:
             preds = model(image, text).log_softmax(2)
@@ -262,83 +421,73 @@ def train(opt):
 
         if i == opt.num_iter:
             print('end the training')
-            sys.exit()
+            break
         i += 1
+    return -current_accuracy
+
+
+def train_skopt(args):
+    SPACE = []
+    STATIC_PARAMS = {}
+    for arg in vars(args):
+        value = getattr(args, arg)
+        try:
+            x = eval(value)
+            if isinstance(x, (Real, Integer, Categorical)):
+                x.name = arg
+                SPACE.append(x)
+            else:
+                STATIC_PARAMS[arg] = value
+        except:
+            STATIC_PARAMS[arg] = value
+
+    @skopt.utils.use_named_args(SPACE)
+    def objective(**params):
+        all_params = edict({**params, **STATIC_PARAMS})
+        return train(all_params)
+
+    results = skopt.dummy_minimize(objective, SPACE, n_calls=3, random_state=0)
+
+    return results
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--experiment_name', help='Where to store logs and models')
-    parser.add_argument('--train_data', required=True, help='path to training dataset')
-    parser.add_argument('--valid_data', required=True, help='path to validation dataset')
-    parser.add_argument('--manualSeed', type=int, default=1111, help='for random seed setting')
-    parser.add_argument('--workers', type=int, help='number of data loading workers', default=4)
-    parser.add_argument('--batch_size', type=int, default=192, help='input batch size')
-    parser.add_argument('--num_iter', type=int, default=300000, help='number of iterations to train for')
-    parser.add_argument('--valInterval', type=int, default=10, help='Interval between each validation')
-    parser.add_argument('--continue_model', default='', help="path to model to continue training")
-    parser.add_argument('--adam', action='store_true', help='Whether to use adam (default is Adadelta)')
-    parser.add_argument('--lr', type=float, default=1, help='learning rate, default=1.0 for Adadelta')
-    parser.add_argument('--film_lr', type=float, default=1, help='learning rate, default=1.0 for Adadelta')
-    parser.add_argument('--beta1', type=float, default=0.9, help='beta1 for adam. default=0.9')
-    parser.add_argument('--rho', type=float, default=0.95, help='decay rate rho for Adadelta. default=0.95')
-    parser.add_argument('--eps', type=float, default=1e-8, help='eps for Adadelta. default=1e-8')
-    parser.add_argument('--grad_clip', type=float, default=5, help='gradient clipping value. default=5')
-    parser.add_argument('--patience', type=float, default=10, help='Patience value for early stopping.')
-    """ Data processing """
-    parser.add_argument('--select_data', type=str, default='MJ-ST',
-                        help='select training data (default is MJ-ST, which means MJ and ST used as training data)')
-    parser.add_argument('--batch_ratio', type=str, default='0.5-0.5',
-                        help='assign ratio for each selected data in the batch')
-    parser.add_argument('--total_data_usage_ratio', type=str, default='1.0',
-                        help='total data usage ratio, this ratio is multiplied to total number of data.')
-    parser.add_argument('--batch_max_length', type=int, default=25, help='maximum-label-length')
-    parser.add_argument('--imgH', type=int, default=32, help='the height of the input image')
-    parser.add_argument('--imgW', type=int, default=100, help='the width of the input image')
-    parser.add_argument('--rgb', action='store_true', help='use rgb input')
-    parser.add_argument('--character', type=str, default='0123456789abcdefghijklmnopqrstuvwxyz', help='character label')
-    parser.add_argument('--sensitive', action='store_true', help='for sensitive character mode')
-    parser.add_argument('--PAD', action='store_true', help='whether to keep ratio then pad for image resize')
-    """ Model Architecture """
-    parser.add_argument('--Transformation', type=str, required=True, help='Transformation stage. None|TPS')
-    parser.add_argument('--FeatureExtraction', type=str, required=True, help='FeatureExtraction stage. VGG|RCNN|ResNet')
-    parser.add_argument('--SequenceModeling', type=str, required=True, help='SequenceModeling stage. None|BiLSTM')
-    parser.add_argument('--Prediction', type=str, required=True, help='Prediction stage. CTC|Attn')
-    parser.add_argument('--num_fiducial', type=int, default=20, help='number of fiducial points of TPS-STN')
-    parser.add_argument('--input_channel', type=int, default=1, help='the number of input channel of Feature extractor')
-    parser.add_argument('--output_channel', type=int, default=512,
-                        help='the number of output channel of Feature extractor')
-    parser.add_argument('--hidden_size', type=int, default=256, help='the size of the LSTM hidden state')
-    parser.add_argument('--comet', type=str, default='mweiss17/navi-str/UcVgpp0wPaprHG4w8MFVMgq7j', help='Comet logging info')
-    parser.add_argument('--no_comet', action="store_true", help='dont use comet')
-    parser.add_argument('--ed_condition', action="store_true", help='dont use comet')
-    parser.add_argument('--apply_film', action="store_true", help='Apply film to the')
-
-    opt = parser.parse_args()
+    # Load the arguments
+    opt = parse_args()
 
     if not opt.experiment_name:
-        opt.experiment_name = f'{opt.Transformation}-{opt.FeatureExtraction}-{opt.SequenceModeling}-{opt.Prediction}'
+        opt.experiment_name = f'{opt.Transformation}-{opt.FeatureExtraction}'
+        opt.experiment_name += f'-{opt.SequenceModeling}-{opt.Prediction}'
         opt.experiment_name += f'-Seed{opt.manualSeed}'
-        # print(opt.experiment_name)
 
-    os.makedirs(f'./saved_models/{opt.experiment_name}', exist_ok=True)
+    output_dir = f'./saved_models/{opt.experiment_name}'
+    print('output_dir: {}'.format(output_dir))
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
 
     """ vocab / character number configuration """
     if opt.sensitive:
         # opt.character += 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
-        opt.character = string.printable[:-6]  # same with ASTER setting (use 94 char).
+        # same with ASTER setting (use 94 char).
+        # '0123456789abcdefghijklmnopqrstuvwxyz'
+        opt.character = string.printable[:-6]
 
     """ Seed and GPU setting """
-    # print("Random Seed: ", opt.manualSeed)
+
+    device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+    print('Device: {}'.format(device))
+
+    print('Random Seed: ', opt.manualSeed)
     random.seed(opt.manualSeed)
     np.random.seed(opt.manualSeed)
     torch.manual_seed(opt.manualSeed)
-    torch.cuda.manual_seed(opt.manualSeed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed(opt.manualSeed)
 
     cudnn.benchmark = True
     cudnn.deterministic = True
     opt.num_gpu = torch.cuda.device_count()
-    # print('device count', opt.num_gpu)
+    print('device count', opt.num_gpu)
     if opt.num_gpu > 1:
         print('------ Use multi-GPU setting ------')
         print('if you stuck too long time with multi-GPU setting, try to set --workers 0')
@@ -353,4 +502,16 @@ if __name__ == '__main__':
         opt.num_iter = int(opt.num_iter / opt.num_gpu)
         """
 
-    train(opt)
+    if opt.skopt:
+        results = train_skopt(opt)
+        print(results.x)  # best hyperparameters
+        print(results.fun)  # best accuracy
+        print(results.func_vals)  # all accuracy
+        print(results.x_iters)  # list of hyperparameters tested
+        print(results.space)  # space tested
+        print(results.random_state)  # state at the end of the optimization
+        print(results.specs)  # args optim
+    else:
+        opt.lr = eval(opt.lr)
+        opt.film_lr = eval(opt.film_lr)
+        train(opt)

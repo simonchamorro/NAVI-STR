@@ -1,75 +1,71 @@
-try:
-    from comet_ml import Experiment
-    comet_loaded = True
-except ImportError:
-    comet_loaded = False
-
 import os
-import sys
-import time
-import random
-import string
+
 import argparse
-
-import torch
-import torch.backends.cudnn as cudnn
-import torch.nn.init as init
-import torch.optim as optim
-import torch.utils.data
-from torch import nn
-import numpy as np
-import pandas as pd
-
-from easydict import EasyDict as edict
-import skopt
+import ruamel.yaml as yaml
 from skopt.space import Real, Integer, Categorical
 
-from utils import CTCLabelConverter, AttnLabelConverter, Averager
-from dataset import hierarchical_dataset, AlignCollate, Batch_Balanced_Dataset
-from model import Model
-from modules.film import FiLMGen
-from test import validation
-from SEVN_gym.envs.utils import convert_street_name, convert_house_numbers
-from load_ranges import get_random, get_sequence
+from trainer import train, train_skopt
 
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--experiment_name',
-                        help='where to store logs and models')
+    """ Experiment hyperparameters """
     parser.add_argument('--train_data',
-                        required=True,
-                        help='path to training dataset')
+                        type=str, default='data/train',
+                        help='Path to training dataset.')
     parser.add_argument('--valid_data',
-                        required=True,
-                        help='path to validation dataset')
+                        type=str, default='data/valid',
+                        help='Path to validation dataset.')
+    parser.add_argument('--experiment_name',
+                        type=str, default='',
+                        help='''Optional custom experiment name.
+                              If not set experiment name will be
+                              "{args.Transformation}-{args.FeatureExtraction}
+                               -{args.SequenceModeling}-{args.Prediction}
+                               -Seed{args.manualSeed}".
+                               Logs and models will be stored in
+                               "./saved_models/{opt.experiment_name}".
+                              ''')
+    parser.add_argument('--skopt',
+                        action='store_true',
+                        help='Apply hyperparameter random search with skopt.')
+    parser.add_argument('--skopt_n_calls',
+                        type=int, default=100,
+                        help='Number or random search to perform.')
+    parser.add_argument('--skopt_random_state',
+                        type=int, default=0,
+                        help='Seed to use for the skopt function.')
+    parser.add_argument('--skopt_cfg',
+                        type=str, default='',
+                        help='''Path to the file containing the hyperparameters
+                             to optimize.''')
     parser.add_argument('--manualSeed',
                         type=int, default=1111,
-                        help='for random seed setting')
+                        help='For random seed setting.')
     parser.add_argument('--workers',
                         type=int, default=4,
-                        help='number of data loading workers')
+                        help='Number of data loading workers.')
     parser.add_argument('--batch_size',
                         type=int, default=192,
-                        help='input batch size')
+                        help='Input batch size.')
     parser.add_argument('--num_iter',
                         type=int, default=300000,
-                        help='number of iterations to train for')
+                        help='Number of iterations to train for.')
     parser.add_argument('--valInterval',
                         type=int, default=10,
-                        help='interval between each validation')
+                        help='Interval between each validation.')
     parser.add_argument('--continue_model',
-                        default='',
-                        help='path to model to continue training')
+                        type=str, default='',
+                        help='Path to model to continue training.')
     parser.add_argument('--adam',
                         action='store_true',
-                        help='whether to use adam (default is Adadelta)')
+                        help='Whether to use adam (default is Adadelta).')
     parser.add_argument('--lr',
-                        type=str, default='1',
-                        help='learning rate, default=1.0 for Adadelta')
+                        type=str, default=1,
+                        help='Learning rate, default=1.0 for Adadelta.')
     parser.add_argument('--film_lr',
-                        type=str, default='1',
-                        help='film learning rate, default=1.0 for Adadelta')
+                        type=str, default=1,
+                        help='Film learning rate, default=1.0 for Adadelta.')
     parser.add_argument('--beta1',
                         type=float, default=0.9,
                         help='beta1 for adam. default=0.9')
@@ -81,437 +77,121 @@ def parse_args():
                         help='eps for Adadelta. default=1e-8')
     parser.add_argument('--grad_clip',
                         type=float, default=5,
-                        help='gradient clipping value. default=5')
+                        help='Gradient clipping value. default=5')
     parser.add_argument('--patience',
                         type=float, default=10,
-                        help='patience value for early stopping.')
+                        help='Patience value for early stopping.')
     """ Data processing """
     parser.add_argument('--select_data',
-                        type=str, default='MJ-ST',
-                        help='''select training data (default is MJ-ST, which
-                                means MJ and ST used as training data)''')
+                        type=str, default='data',
+                        help='''Select training data (default is data).''')
     parser.add_argument('--batch_ratio',
-                        type=str, default='0.5-0.5',
-                        help='''assign ratio for each selected data in the
-                                batch''')
+                        type=str, default='1.0',
+                        help='''Assign ratio for each selected data in the
+                                batch.''')
     parser.add_argument('--total_data_usage_ratio',
                         type=str, default='1.0',
-                        help='''total data usage ratio, this ratio is
+                        help='''Total data usage ratio, this ratio is
                                 multiplied to total number of data.''')
     parser.add_argument('--batch_max_length',
                         type=int, default=25,
-                        help='maximum-label-length')
+                        help='Maximum-label-length.')
     parser.add_argument('--imgH',
                         type=int, default=32,
-                        help='the height of the input image')
+                        help='The height of the input image.')
     parser.add_argument('--imgW',
                         type=int, default=100,
-                        help='the width of the input image')
+                        help='The width of the input image.')
     parser.add_argument('--rgb',
                         action='store_true',
-                        help='use rgb input')
+                        help='Use rgb input.')
     parser.add_argument('--character',
                         type=str,
                         default='0123456789abcdefghijklmnopqrstuvwxyz',
                         help='character label')
     parser.add_argument('--sensitive',
                         action='store_true',
-                        help='for sensitive character mode')
+                        help='For sensitive character mode.')
     parser.add_argument('--PAD',
                         action='store_true',
-                        help='whether to keep ratio then pad for image resize')
+                        help='''Whether to keep ratio then pad for
+                                image resize.''')
     """ Model Architecture """
     parser.add_argument('--Transformation',
-                        type=str, required=True,
+                        type=str, default='TPS',
                         help='Transformation stage. None|TPS')
     parser.add_argument('--FeatureExtraction',
-                        type=str, required=True,
+                        type=str, default='ResNet',
                         help='FeatureExtraction stage. VGG|RCNN|ResNet')
     parser.add_argument('--SequenceModeling',
-                        type=str, required=True,
+                        type=str, default='BiLSTM',
                         help='SequenceModeling stage. None|BiLSTM')
     parser.add_argument('--Prediction',
-                        type=str, required=True,
+                        type=str, default='Attn',
                         help='Prediction stage. CTC|Attn')
     parser.add_argument('--num_fiducial',
                         type=int, default=20,
-                        help='number of fiducial points of TPS-STN')
+                        help='Number of fiducial points of TPS-STN.')
     parser.add_argument('--input_channel',
                         type=int, default=1,
-                        help='''the number of input channel of Feature
-                                extractor''')
+                        help='''The number of input channel of Feature
+                                extractor.''')
     parser.add_argument('--output_channel',
                         type=int, default=512,
-                        help='''the number of output channel of Feature
-                                extractor''')
+                        help='''The number of output channel of Feature
+                                extractor.''')
     parser.add_argument('--hidden_size',
                         type=int, default=256,
-                        help='the size of the LSTM hidden state')
+                        help='The size of the LSTM hidden state.')
     parser.add_argument('--comet',
                         type=str,
                         default='mweiss17/navi-str/UcVgpp0wPaprHG4w8MFVMgq7j',
-                        help='Comet logging info')
+                        help='Comet logging info.')
     parser.add_argument('--no_comet',
                         action='store_true',
-                        help='dont use comet')
+                        help='Dont use comet.')
     parser.add_argument('--ed_condition',
                         action='store_true',
-                        help='dont use comet')
+                        help='???')
     parser.add_argument('--apply_film',
                         action='store_true',
-                        help='Apply film to the')
-    parser.add_argument('--skopt',
-                        action='store_true',
-                        help='apply skopt')
+                        help='Apply film to the feature extractor model.')
 
     args = parser.parse_args()
     return args
 
 
-def train(opt):
-    """ dataset preparation """
-    opt.select_data = opt.select_data.split('-')
-    opt.batch_ratio = opt.batch_ratio.split('-')
-    train_dataset = Batch_Balanced_Dataset(opt)
-
-    AlignCollate_valid = AlignCollate(imgH=opt.imgH, imgW=opt.imgW,
-                                      keep_ratio_with_pad=opt.PAD)
-    valid_dataset = hierarchical_dataset(root=opt.valid_data, opt=opt)
-    valid_loader = torch.utils.data.DataLoader(
-        valid_dataset, batch_size=opt.batch_size,
-        # 'True' to check training progress with validation function.
-        shuffle=True,
-        num_workers=int(opt.workers),
-        collate_fn=AlignCollate_valid, pin_memory=True)
-    print('-' * 80)
-
-    """ model configuration """
-    if 'CTC' in opt.Prediction:
-        converter = CTCLabelConverter(opt.character)
-    else:
-        converter = AttnLabelConverter(opt.character)
-    opt.num_class = len(converter.character)
-
-    if opt.rgb:
-        opt.input_channel = 3
-    model = Model(opt)
-
-    film_gen = FiLMGen(input_dim=200, emb_dim=1000, cond_feat_size=18944)
-    if torch.cuda.is_available():
-        film_gen.cuda()
-
-    print('model input parameters', opt.imgH, opt.imgW, opt.num_fiducial,
-          opt.input_channel, opt.output_channel,
-          opt.hidden_size, opt.num_class, opt.batch_max_length,
-          opt.Transformation, opt.FeatureExtraction,
-          opt.SequenceModeling, opt.Prediction)
-    # weight initialization
-    for name, param in model.named_parameters():
-        if 'localization_fc2' in name:
-            print(f'Skip {name} as it is already initialized')
-            continue
-        try:
-            if 'bias' in name:
-                init.constant_(param, 0.0)
-            elif 'weight' in name:
-                init.kaiming_normal_(param)
-        except Exception as e:  # for batchnorm.
-            if 'weight' in name:
-                param.data.fill_(1)
-            continue
-
-    # data parallel for multi-GPU
-    model = torch.nn.DataParallel(model)
-    if torch.cuda.is_available():
-        model.cuda()
-    model.train()
-    film_gen.train()
-    if opt.continue_model != '':
-        print(f'loading pretrained model from {opt.continue_model}')
-        model.load_state_dict(torch.load(opt.continue_model))
-    print("Model:")
-    print(model)
-
-    """ setup loss """
-    if 'CTC' in opt.Prediction:
-        criterion = torch.nn.CTCLoss(zero_infinity=True)
-        if torch.cuda.is_available():
-            criterion.cuda()
-    else:
-        criterion = torch.nn.CrossEntropyLoss(ignore_index=0)
-        if torch.cuda.is_available():
-            criterion.cuda()  # ignore [GO] token = ignore index 0
-    # loss averager
-    loss_avg = Averager()
-
-    # filter that only require gradient decent
-    filtered_parameters = []
-    params_num = []
-    for p in filter(lambda p: p.requires_grad, model.parameters()):
-        filtered_parameters.append(p)
-        params_num.append(np.prod(p.size()))
-
-    film_filtered_params = []
-    film_params_num = []
-    for p in filter(lambda p: p.requires_grad, film_gen.parameters()):
-        film_filtered_params.append(p)
-        film_params_num.append(np.prod(p.size()))
-    print(f"FiLM params num: {sum(film_params_num)}")
-    print('Trainable params num : ', sum(params_num))
-    # [print(name, p.numel()) for name, p in filter(lambda p: p[1].requires_grad, model.named_parameters())]
-
-    # setup optimizer
-    if opt.adam:
-        optimizer = optim.Adam(filtered_parameters, lr=opt.lr, betas=(opt.beta1, 0.999))
-        film_optimizer = optim.Adam(film_filtered_params, lr=opt.film_lr, betas=(opt.beta1, 0.999))
-    else:
-        optimizer = optim.Adadelta(filtered_parameters, lr=opt.lr, rho=opt.rho, eps=opt.eps)
-        film_optimizer = optim.Adadelta(film_filtered_params, lr=opt.film_lr, rho=opt.rho, eps=opt.eps)
-    print("Optimizer:")
-    print(optimizer)
-    """ final options """
-
-    # Create comet experiment
-    if comet_loaded and len(opt.comet) > 0 and not opt.no_comet:
-        comet_credentials = opt.comet.split("/")
-        experiment = Experiment(
-            api_key=comet_credentials[2],
-            project_name=comet_credentials[1],
-            workspace=comet_credentials[0])
-        for key, value in vars(opt).items():
-            experiment.log_parameter(key, value)
-    else:
-        experiment = None
-
-    # print(opt)
-    with open(f'./saved_models/{opt.experiment_name}/opt.txt', 'a') as opt_file:
-        opt_log = '------------ Options -------------\n'
-        args = vars(opt)
-        for k, v in args.items():
-            opt_log += f'{str(k)}: {str(v)}\n'
-        opt_log += '---------------------------------------\n'
-        print(opt_log)
-        opt_file.write(opt_log)
-
-    """ start training """
-    start_iter = 0
-    # if opt.continue_model != '':
-    #     start_iter = int(opt.continue_model.split('_')[-1].split('.')[0])
-    #     print(f'continue to train, start_iter: {start_iter}')
-
-    start_time = time.time()
-    best_accuracy = -1
-    best_norm_ED = 1e+6
-    i = start_iter
-    patience = opt.patience
-    print(f"opt.patience: {patience}")
-
-    while(True):
-        # train part
-        for p in model.parameters():
-            p.requires_grad = True
-        for p in film_gen.parameters():
-            p.requires_grad = True
-        image_tensors, labels = train_dataset.get_batch()
-
-        ids = labels
-        labels = [label.split("_")[0] for label in labels]
-        num_hn = 5
-        cond_house_numbers = [get_random(int(img_id.split("_")[0]), img_id.split("_")[1], num_hn) for img_id in ids]
-        cond_house_numbers = [convert_house_numbers(n) for l in cond_house_numbers for n in l]
-        cond_house_numbers = torch.FloatTensor(cond_house_numbers)
-        cond_text = cond_house_numbers.view(-1, num_hn * 40)
-
-        image = image_tensors
-
-        # labels is a list of house numbers
-        text, length = converter.encode(labels)
-        batch_size = image.size(0)
-
-        if torch.cuda.is_available():
-            cond_text.cuda()
-            image.cuda()
-
-        if 'CTC' in opt.Prediction:
-            preds = model(image, text).log_softmax(2)
-            preds_size = torch.IntTensor([preds.size(1)] * batch_size)
-            preds = preds.permute(1, 0, 2)  # to use CTCLoss format
-            cost = criterion(preds, text, preds_size, length)
-
-        else:
-            cond_params = None
-            if opt.apply_film:
-                cond_params = film_gen(cond_text)
-
-            preds = model(image, text, cond_params)
-            target = text[:, 1:]  # without [GO] Symbol
-            cost = criterion(preds.view(-1, preds.shape[-1]), target.contiguous().view(-1))
-
-        model.zero_grad()
-        film_gen.zero_grad()
-        cost.backward()
-        torch.nn.utils.clip_grad_norm_(model.parameters(), opt.grad_clip)  # gradient clipping with 5 (Default)
-        optimizer.step()
-        film_optimizer.step()
-        print(f"cost: {cost.item()}")
-        loss_avg.add(cost)
-
-        # validation part
-        if i % opt.valInterval == 0:
-            elapsed_time = time.time() - start_time
-            print(f'[{i}/{opt.num_iter}] Loss: {loss_avg.val():0.5f} elapsed_time: {elapsed_time:0.5f}')
-            if experiment is not None:
-                    experiment.log_metric("Time", elapsed_time, step=i)
-
-            # for log file and comet
-            with open(f'./saved_models/{opt.experiment_name}/log_train.txt', 'a') as log:
-                log.write(f'[{i}/{opt.num_iter}] Loss: {loss_avg.val():0.5f} elapsed_time: {elapsed_time:0.5f}\n')
-                if experiment is not None:
-                    experiment.log_metric("Loss", loss_avg.val(), step=i)
-                loss_avg.reset()
-
-                model.eval()
-                film_gen.eval()
-                valid_loss, current_accuracy, current_norm_ED, current_int_dist, preds, labels, infer_time, length_of_data = validation(
-                    model, criterion, valid_loader, converter, opt, film_gen=film_gen)
-                model.train()
-                film_gen.train()
-                for pred, gt in zip(preds[:5], labels[:5]):
-                    if 'Attn' in opt.Prediction:
-                        pred = pred[:pred.find('[s]')]
-                        gt = gt[:gt.find('[s]')]
-                    print(f'{pred:20s}, gt: {gt:20s},   {str(pred == gt)}')
-                    log.write(f'{pred:20s}, gt: {gt:20s},   {str(pred == gt)}\n')
-
-                valid_log = f'[{i}/{opt.num_iter}] valid loss: {valid_loss:0.5f}'
-                valid_log += f' accuracy: {current_accuracy:0.3f}, norm_ED: {current_norm_ED:0.2f}, int_dist: {current_int_dist:0.2f}'
-                print(valid_log)
-                log.write(valid_log + '\n')
-                if experiment is not None:
-                    experiment.log_metric("Valid Loss", valid_loss, step=i)
-                    experiment.log_metric("Accuracy", current_accuracy, step=i)
-                    experiment.log_metric("Norm ED", current_norm_ED, step=i)
-                    experiment.log_metric("Int Distance", current_int_dist, step=i)
-
-                # keep best accuracy model
-                if current_accuracy > best_accuracy:
-                    patience = opt.patience
-                    best_accuracy = current_accuracy
-                    torch.save(model.state_dict(), f'./saved_models/{opt.experiment_name}/best_accuracy.pth')
-                    torch.save(film_gen.state_dict(), f'./saved_models/{opt.experiment_name}/best_accuracy_film_gen.pth')
-                else:
-                    patience -= 1
-                    if patience == 0:
-                        print("Early stopping.")
-                        break
-                if current_norm_ED < best_norm_ED:
-                    best_norm_ED = current_norm_ED
-                    torch.save(model.state_dict(), f'./saved_models/{opt.experiment_name}/best_norm_ED.pth')
-                best_model_log = f'best_accuracy: {best_accuracy:0.3f}, best_norm_ED: {best_norm_ED:0.2f}'
-                print(best_model_log)
-                log.write(best_model_log + '\n')
-                if experiment is not None:
-                    experiment.log_metric("Best Accuracy", best_accuracy, step=i)
-                    experiment.log_metric("Best Norm ED", best_norm_ED, step=i)
-
-        # save model per 1e+5 iter.
-        if (i + 1) % 1e+5 == 0:
-            torch.save(
-                model.state_dict(), f'./saved_models/{opt.experiment_name}/iter_{i+1}.pth')
-
-        if i == opt.num_iter:
-            print('end the training')
-            break
-        i += 1
-    return -current_accuracy
-
-
-def train_skopt(args):
-    SPACE = []
-    STATIC_PARAMS = {}
-    for arg in vars(args):
-        value = getattr(args, arg)
-        try:
-            x = eval(value)
-            if isinstance(x, (Real, Integer, Categorical)):
-                x.name = arg
-                SPACE.append(x)
-            else:
-                STATIC_PARAMS[arg] = value
-        except:
-            STATIC_PARAMS[arg] = value
-
-    @skopt.utils.use_named_args(SPACE)
-    def objective(**params):
-        all_params = edict({**params, **STATIC_PARAMS})
-        return train(all_params)
-
-    results = skopt.dummy_minimize(objective, SPACE, n_calls=3, random_state=0)
-
-    return results
-
-
 if __name__ == '__main__':
-    # Load the arguments
-    opt = parse_args()
+    # Load arguments
+    args = parse_args()
 
-    if not opt.experiment_name:
-        opt.experiment_name = f'{opt.Transformation}-{opt.FeatureExtraction}'
-        opt.experiment_name += f'-{opt.SequenceModeling}-{opt.Prediction}'
-        opt.experiment_name += f'-Seed{opt.manualSeed}'
+    if not args.experiment_name:
+        experiment_name = f'{args.Transformation}-{args.FeatureExtraction}'
+        experiment_name += f'-{args.SequenceModeling}-{args.Prediction}'
+        experiment_name += f'-Seed{args.manualSeed}'
+        args.experiment_name = experiment_name
 
-    output_dir = f'./saved_models/{opt.experiment_name}'
-    print('output_dir: {}'.format(output_dir))
-    if not os.path.exists(output_dir):
-        os.makedirs(output_dir)
+    if args.skopt:
+        # Load skopt config file
+        if not args.skopt_cfg:
+            raise Exception('No skopt config file specified.')
 
-    """ vocab / character number configuration """
-    if opt.sensitive:
-        # opt.character += 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
-        # same with ASTER setting (use 94 char).
-        # '0123456789abcdefghijklmnopqrstuvwxyz'
-        opt.character = string.printable[:-6]
+        with open(args.skopt_cfg, 'r') as f:
+            skopt_cfg = yaml.safe_load(f)
 
-    """ Seed and GPU setting """
+        # Merge skopt_cfg into args
+        intersection = set(vars(args)).intersection(set(skopt_cfg))
+        print('Hyperparameters to optimize: {}'.format(list(intersection)))
+        for arg in intersection:
+            skopt_value = eval(skopt_cfg[arg])
+            if not isinstance(skopt_value, (Real, Integer, Categorical)):
+                raise Exception(f'{skopt_value} not an skopt space.')
+            else:
+                skopt_value.name = arg
+            vars(args)[arg] = skopt_value
 
-    device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
-    print('Device: {}'.format(device))
-
-    print('Random Seed: ', opt.manualSeed)
-    random.seed(opt.manualSeed)
-    np.random.seed(opt.manualSeed)
-    torch.manual_seed(opt.manualSeed)
-    if torch.cuda.is_available():
-        torch.cuda.manual_seed(opt.manualSeed)
-
-    cudnn.benchmark = True
-    cudnn.deterministic = True
-    opt.num_gpu = torch.cuda.device_count()
-    print('device count', opt.num_gpu)
-    if opt.num_gpu > 1:
-        print('------ Use multi-GPU setting ------')
-        print('if you stuck too long time with multi-GPU setting, try to set --workers 0')
-        # check multi-GPU issue https://github.com/clovaai/ocr/issues/1
-        opt.workers = opt.workers * opt.num_gpu
-
-        """ previous version
-        print('To equlize batch stats to 1-GPU setting, the batch_size is multiplied with num_gpu and multiplied batch_size is ', opt.batch_size)
-        opt.batch_size = opt.batch_size * opt.num_gpu
-        print('To equalize the number of epochs to 1-GPU setting, num_iter is divided with num_gpu by default.')
-        If you dont care about it, just commnet out these line.)
-        opt.num_iter = int(opt.num_iter / opt.num_gpu)
-        """
-
-    if opt.skopt:
-        results = train_skopt(opt)
-        print(results.x)  # best hyperparameters
-        print(results.fun)  # best accuracy
-        print(results.func_vals)  # all accuracy
-        print(results.x_iters)  # list of hyperparameters tested
-        print(results.space)  # space tested
-        print(results.random_state)  # state at the end of the optimization
-        print(results.specs)  # args optim
+        # Train with hyperparameters tuning with skopt
+        train_skopt(args, args.skopt_n_calls, args.skopt_random_state)
     else:
-        opt.lr = eval(opt.lr)
-        opt.film_lr = eval(opt.film_lr)
-        train(opt)
+        # Train model
+        train(args)

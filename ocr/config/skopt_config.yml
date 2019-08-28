@@ -1,0 +1,2 @@
+lr: Real(10**-4, 10**-2, "log-uniform")
+film_lr: Real(10**-4, 10**-2, "log-uniform")

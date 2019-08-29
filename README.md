@@ -26,6 +26,8 @@ pip install -e .
 1. Scene text detection using yolo implementation from https://github.com/eriklindernoren/PyTorch-YOLOv3
 2. Scene text recognition using this implementation https://github.com/clovaai/deep-text-recognition-benchmark
 
+Starnet weight can be downloaded [here](https://drive.google.com/drive/folders/15WPsuPJDCzhp2SvYZLRj8mAlT3zmoAMW). File is `TPS-ResNet-BiLSTM-Attn.pth`.
+
 ## Training
 ##### YOLO
     $ cd PyTorch-YOLOv3/

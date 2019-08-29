@@ -243,8 +243,8 @@ def train(opt):
         batch_size = image.size(0)
 
         if torch.cuda.is_available():
-            cond_text.cuda()
-            image.cuda()
+            cond_text = cond_text.cuda()
+            image = image.cuda()
 
         if 'CTC' in opt.Prediction:
             preds = model(image, text).log_softmax(2)

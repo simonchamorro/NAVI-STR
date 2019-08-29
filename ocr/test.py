@@ -207,12 +207,18 @@ def test(opt):
     print('model input parameters', opt.imgH, opt.imgW, opt.num_fiducial, opt.input_channel, opt.output_channel,
           opt.hidden_size, opt.num_class, opt.batch_max_length, opt.Transformation, opt.FeatureExtraction,
           opt.SequenceModeling, opt.Prediction)
-    model = torch.nn.DataParallel(model).cuda()
+
+    model = torch.nn.DataParallel(model)
+    if torch.cuda.is_available():
+        model = model.cuda()
 
     # load model
     print('loading pretrained model from %s' % opt.saved_model)
     model.load_state_dict(torch.load(opt.saved_model))
-    film_gen = FiLMGen(input_dim=200, emb_dim=1000, cond_feat_size=18944).cuda()
+
+    film_gen = FiLMGen(input_dim=200, emb_dim=1000, cond_feat_size=18944)
+    if torch.cuda.is_available():
+        film_gen = film_gen.cuda()
 
     if opt.apply_film:
         film_gen.load_state_dict(torch.load(f'./{"/".join(opt.saved_model.split("/")[:-1])}/best_accuracy_film_gen.pth'))

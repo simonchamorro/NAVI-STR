@@ -1,2 +1,2 @@
-lr: Real(10**-2, 10**-1, "log-uniform")
-film_lr: Real(10**-2, 10**-1, "log-uniform")
+lr: Real(10**-1, 10**-0, "log-uniform")
+film_lr: Real(10**-1, 10**-0, "log-uniform")

@@ -156,6 +156,18 @@ def parse_args():
     parser.add_argument('--apply_film',
                         action='store_true',
                         help='Apply film to the feature extractor model.')
+    parser.add_argument('--freeze_main',
+                        action='store_true',
+                        help='Freeze the main models network.')
+    parser.add_argument('--film_emb',
+                        type=int, default=256,
+                        help='Define the hidden size for the film network.')
+    parser.add_argument('--film_layers',
+                        type=int, default=1,
+                        help='Define the number of hidden layers for the film network.')
+    parser.add_argument('--film_type',
+                        type=str, default='mlp',
+                        help='Define the network architecture for film generator network.')
 
     args = parser.parse_args()
     return args

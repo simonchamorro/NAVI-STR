@@ -17,7 +17,7 @@ git clone https://github.com/mweiss17/SEVN.git
 cd SEVN
 pip3 install -e .
 cd ..
-git clone https://github.com/simonchamorro/NAVI-STR
+git clone https://github.com/simonchamorro/NAVI-STR.git
 cd NAVI-STR
 pip install -e .
 ```

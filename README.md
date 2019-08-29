@@ -2,11 +2,13 @@
 Scene Text Recognition pipeline for NAVI (Navigational Assistant for the Visually Impaired)
 
 ## Requirements
+There are two options: use singularity (which installs the whole environment for you) or manually install the requirements yourself (preferably in a conda environment) which enables you to actually develop on the codebase.
 
+Singularity:
 `singularity pull shub://mweiss17/SEVN:latest`
 
-In order to install requirements, follow:
 
+Manual Install (developer mode):
 ```bash
 
 git clone https://github.com/openai/baselines.git
@@ -26,7 +28,7 @@ pip install -e .
 1. Scene text detection using yolo implementation from https://github.com/eriklindernoren/PyTorch-YOLOv3
 2. Scene text recognition using this implementation https://github.com/clovaai/deep-text-recognition-benchmark
 
-Starnet weight can be downloaded [here](https://drive.google.com/drive/folders/15WPsuPJDCzhp2SvYZLRj8mAlT3zmoAMW). File is `TPS-ResNet-BiLSTM-Attn.pth`.
+Starnet weight should be downloaded [here](https://drive.google.com/drive/folders/15WPsuPJDCzhp2SvYZLRj8mAlT3zmoAMW). File is `TPS-ResNet-BiLSTM-Attn.pth`, and should be stored in `pth/TPS-ResNet-BiLSTM-Attn.pth`
 
 ## Training
 ##### YOLO
@@ -36,6 +38,11 @@ Starnet weight can be downloaded [here](https://drive.google.com/drive/folders/1
 ##### Starnet OCR	
     $ cd ocr/
     $ CUDA_VISIBLE_DEVICES=1 python3 train.py --train_data data/train --valid_data data/valid  --batch_ratio 1.0 --Transformation TPS --FeatureExtraction ResNet --SequenceModeling BiLSTM --Prediction Attn --continue_model pth/TPS-ResNet-BiLSTM-Attn.pth --valInterval 10 --patience 5 --select_data data --no_comet --experiment_name 'EXPERIMENT_NAME'
+
+Hyper-parameter search:
+`./hyper-search.sh`
+This runs several hyper-parameter searches.
+
 
 ## Testing
 ##### YOLO

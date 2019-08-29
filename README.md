@@ -48,7 +48,7 @@ A couple important arguments:
 - `--apply_film`: applies the film generator
 - `--ed_condition`: maps network outputs to nearby strings from the ground truth
 
-A couple important files:
+A couple important files in the ocr folder:
 - `train.py`: has the arguments and sets up the hyper-param search code
 - `trainer.py`: has the train-loop
 - `hyper-search.sh`: runs some hyper-parameter searches

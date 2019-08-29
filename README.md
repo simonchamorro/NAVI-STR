@@ -3,9 +3,20 @@ Scene Text Recognition pipeline for NAVI (Navigational Assistant for the Visuall
 
 ## Requirements
 
+`singularity pull shub://mweiss17/SEVN:latest`
+
 In order to install requirements, follow:
 
 ```bash
+
+git clone https://github.com/openai/baselines.git
+cd baselines
+pip3 install -e .
+cd ..
+git clone https://github.com/mweiss17/SEVN.git
+cd SEVN
+pip3 install -e .
+cd ..
 git clone https://github.com/simonchamorro/NAVI-STR
 cd NAVI-STR
 pip install -e .
@@ -22,7 +33,7 @@ pip install -e .
 
 ##### Starnet OCR	
     $ cd ocr/
-    $ CUDA_VISIBLE_DEVICES=1 python3 train.py --train_data data/train --valid_data data/valid  --batch_ratio 1.0 --Transformation TPS --FeatureExtraction ResNet --SequenceModeling BiLSTM --Prediction Attn --continue_model SAVED_MODEL --valInterval 1 --select_data data
+    $ CUDA_VISIBLE_DEVICES=1 python3 train.py --train_data data/train --valid_data data/valid  --batch_ratio 1.0 --Transformation TPS --FeatureExtraction ResNet --SequenceModeling BiLSTM --Prediction Attn --continue_model pth/TPS-ResNet-BiLSTM-Attn.pth --valInterval 10 --patience 5 --select_data data --no_comet --experiment_name 'EXPERIMENT_NAME'
 
 ## Testing
 ##### YOLO

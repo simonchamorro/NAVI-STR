@@ -17,7 +17,6 @@ CUDA_VISIBLE_DEVICES=1 python3 train.py \
   --apply_film \
   --skopt_n_calls 5 \
   --skopt \
-  --rgb \
   --skopt_random_state 1 \
   --skopt_cfg 'config/skopt_config.yml' \
   --experiment_name "VS-FT-CBN"
@@ -37,7 +36,6 @@ CUDA_VISIBLE_DEVICES=1 python3 train.py \
     --no_comet \
     --skopt_n_calls 5 \
     --skopt \
-    --rgb \
     --skopt_random_state 1 \
     --skopt_cfg 'config/skopt_config.yml' \
     --experiment_name "VS-FT"

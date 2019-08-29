@@ -101,16 +101,15 @@ def validation(model, criterion, evaluation_loader, converter, opt, eval_data=No
         labels = [label.split("_")[0] for label in labels]
 
         with torch.no_grad():
-            image = image_tensors
-            # For max length prediction
-            length_for_pred = torch.IntTensor([opt.batch_max_length] * batch_size)
-            text_for_pred = torch.LongTensor(batch_size, opt.batch_max_length + 1).fill_(0)
-
             if torch.cuda.is_available():
-                image.cuda()
-                length_for_pred.cuda()
-                text_for_pred.cuda()
-
+                image = image_tensors.cuda()
+                # For max length prediction
+                length_for_pred = torch.cuda.IntTensor([opt.batch_max_length] * batch_size)
+                text_for_pred = torch.cuda.LongTensor(batch_size, opt.batch_max_length + 1).fill_(0)
+            else:
+                image = image_tensors
+                length_for_pred = torch.IntTensor([opt.batch_max_length] * batch_size)
+                text_for_pred = torch.LongTensor(batch_size, opt.batch_max_length + 1).fill_(0)
             text_for_loss, length_for_loss = converter.encode(labels)
 
         start_time = time.time()
@@ -135,9 +134,10 @@ def validation(model, criterion, evaluation_loader, converter, opt, eval_data=No
             ed_text = [get_random(int(img_id.split("_")[0]), img_id.split("_")[1], num_ed_text) for img_id in ids]
             cond_house_numbers = [convert_house_numbers(n) for l in cond_house_numbers for n in l]
             cond_house_numbers = torch.FloatTensor(cond_house_numbers)
-            cond_text = cond_house_numbers.view(-1, num_hn * 40)
             if torch.cuda.is_available():
-                cond_text.cuda()
+                cond_text = cond_house_numbers.view(-1, num_hn * 40).cuda()
+            else:
+                cond_text = cond_house_numbers.view(-1, num_hn * 40)
             cond_params = []
             if opt.apply_film:
                 cond_params.append(film_gen(cond_text))

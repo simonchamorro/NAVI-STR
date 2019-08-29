@@ -79,19 +79,23 @@ class AttnLabelConverter(object):
         # batch_max_length = max(length) # this is not allowed for multi-gpu setting
         batch_max_length += 1
         # additional +1 for [GO] at first step. batch_text is padded with [GO] token after [s] token.
-        batch_text = torch.LongTensor(len(text), batch_max_length + 1).fill_(0)
         if torch.cuda.is_available():
-            text.cuda()
-            batch_text.cuda()
+            batch_text = torch.cuda.LongTensor(len(text), batch_max_length + 1).fill_(0)
+        else:
+            batch_text = torch.LongTensor(len(text), batch_max_length + 1).fill_(0)
         for i, t in enumerate(text):
             text = list(t)
             text.append('[s]')
             text = [self.dict[char] for char in text]
-            batch_text[i][1:1 + len(text)] = torch.LongTensor(text)  # batch_text[:, 0] = [GO] token
-        length = torch.IntTensor(length)
+
+            if torch.cuda.is_available():
+                batch_text[i][1:1 + len(text)] = torch.cuda.LongTensor(text)  # batch_text[:, 0] = [GO] token
+            else:
+                batch_text[i][1:1 + len(text)] = torch.LongTensor(text)  # batch_text[:, 0] = [GO] token
         if torch.cuda.is_available():
-            length.cuda()
-        return (batch_text, length)
+            return (batch_text, torch.cuda.IntTensor(length))
+        else:
+            return (batch_text, torch.IntTensor(length))
 
     def decode(self, text_index, length):
         """ convert text-index into text-label. """

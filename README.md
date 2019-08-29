@@ -11,6 +11,7 @@ Singularity:
 Manual Install (developer mode):
 ```bash
 
+conda create -n str python=3.6
 git clone https://github.com/openai/baselines.git
 cd baselines
 pip3 install -e .
@@ -41,8 +42,21 @@ Starnet weight should be downloaded [here](https://drive.google.com/drive/folder
 
 Hyper-parameter search:
 `./hyper-search.sh`
-This runs several hyper-parameter searches.
+This runs several hyper-parameter searches, one with film and one without.
 
+A couple important arguments:
+- `--apply_film`: applies the film generator
+- `--ed_condition`: maps network outputs to nearby strings from the ground truth
+
+A couple important files:
+- `train.py`: has the arguments and sets up the hyper-param search code
+- `trainer.py`: has the train-loop
+- `hyper-search.sh`: runs some hyper-parameter searches
+- `load_ranges.py`: interacts with the OpenStreetMap extracted house number ranges for conditioning (notable functions: `get_random`, `get_sequence`)
+- `test.py`: contains code to run the validation set and test set.
+- `dataset.py`: loads and normalizes our data
+- `modules/feature_extraction.py`: contains the resnet, basic resnet block, etc.
+- `modules/film.py`: contains the film generator code
 
 ## Testing
 ##### YOLO

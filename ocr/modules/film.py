@@ -11,7 +11,7 @@ class FiLMGen(nn.Module):
         self.emb_dim = emb_dim
         self.cond_feat_size = cond_feat_size  # gammas and betas
         self.layers = nn.Sequential(
-            nn.Linear(self.input_dim, self.emb_dim),
+            nn.Linear(self.input_dim, self.cond_feat_size),
             # nn.ReLU(),
             # nn.Linear(self.emb_dim, self.emb_dim),
             # nn.ReLU(),

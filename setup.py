@@ -8,5 +8,5 @@ setup(
                       'tables', 'numpy', 'torch', 'torchvision',
                       'matplotlib', 'tensorflow', 'tensorboard',
                       'terminaltables', 'pillow', 'tqdm', 'lmdb',
-                      'nltk', 'natsort', 'easydict']
+                      'nltk', 'natsort', 'easydict', 'ruamel.yaml']
 )

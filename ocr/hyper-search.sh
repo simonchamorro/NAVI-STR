@@ -15,7 +15,7 @@ CUDA_VISIBLE_DEVICES=1 python3 train.py \
   --select_data data \
   --no_comet \
   --apply_film \
-  --skopt_n_calls 5 \
+  --skopt_n_calls 50 \
   --skopt \
   --skopt_random_state 1 \
   --skopt_cfg 'config/skopt_config.yml' \
@@ -34,7 +34,7 @@ CUDA_VISIBLE_DEVICES=1 python3 train.py \
     --patience 5 \
     --select_data data \
     --no_comet \
-    --skopt_n_calls 5 \
+    --skopt_n_calls 50 \
     --skopt \
     --skopt_random_state 1 \
     --skopt_cfg 'config/skopt_config.yml' \

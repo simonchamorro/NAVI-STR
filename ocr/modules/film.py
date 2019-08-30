@@ -18,8 +18,6 @@ class FiLMGen(nn.Module):
         self.layers = nn.Sequential(
             nn.Linear(self.input_dim, self.emb_dim),
             nn.ReLU(),
-            nn.Linear(self.emb_dim, self.emb_dim),
-            nn.ReLU(),
             nn.Linear(self.emb_dim, self.cond_feat_size)
         )
         if init_xavier:

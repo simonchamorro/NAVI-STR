@@ -170,14 +170,14 @@ def train(opt):
     # Setup optimizer
     if opt.adam:
         optimizer = optim.Adam(
-            filtered_parameters, lr=opt.lr, betas=(opt.beta1, 0.999))
+            filtered_parameters, lr=float(opt.lr), betas=(opt.beta1, 0.999))
         film_optimizer = optim.Adam(
-            film_filtered_params, lr=opt.film_lr, betas=(opt.beta1, 0.999))
+            film_filtered_params, lr=float(opt.film_lr), betas=(opt.beta1, 0.999))
     else:
         optimizer = optim.Adadelta(
-            filtered_parameters, lr=opt.lr, rho=opt.rho, eps=opt.eps)
+            filtered_parameters, lr=float(opt.lr), rho=opt.rho, eps=opt.eps)
         film_optimizer = optim.Adadelta(
-            film_filtered_params, lr=opt.film_lr, rho=opt.rho, eps=opt.eps)
+            film_filtered_params, lr=float(opt.film_lr), rho=opt.rho, eps=opt.eps)
     print('Optimizer:')
     print(optimizer)
 

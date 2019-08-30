@@ -264,12 +264,8 @@ def train(opt):
                              target.contiguous().view(-1))
         if opt.print_grad:
             try:
-                for i, weights, biases in enumerate(model.parameters()):
-                    print(f'model layer {i}, weight grad (sum): {weights.grad.sum()} \n')
-                    print(f'model layer {i}, bias grad (sum): {biases.grad.sum()} \n')
-                for i, weights, biases in enumerate(film_gen.parameters()):
-                    print(f'film_gen layer {i}, weight grad (sum): {weights.grad.sum()} \n')
-                    print(f'film_gen layer {i}, bias grad (sum): {biases.grad.sum()} \n')
+                print(f'model grad (sum): {sum([p.grad.sum() for p in model.parameters()])} \n')
+                print(f'film_gen grad (sum): {sum([p.grad.sum() for p in film_gen.parameters()])} \n')
             except Exception:
                 import pdb; pdb.set_trace()
         model.zero_grad()

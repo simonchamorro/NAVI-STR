@@ -264,8 +264,8 @@ def train(opt):
                              target.contiguous().view(-1))
         if opt.print_grad:
             try:
-                print(f'model grad (sum): {sum([p.grad.sum() for p in model.parameters()])} \n')
-                print(f'film_gen grad (sum): {sum([p.grad.sum() for p in film_gen.parameters()])} \n')
+                print(f'model grad (sum): {sum([p.grad.sum() for p in model.parameters()])}')
+                print(f'film_gen grad (sum): {sum([p.grad.sum() for p in film_gen.parameters()])}')
             except Exception:
                 import pdb; pdb.set_trace()
         model.zero_grad()

@@ -168,6 +168,9 @@ def parse_args():
     parser.add_argument('--film_type',
                         type=str, default='mlp',
                         help='Define the network architecture for film generator network.')
+    parser.add_argument('--init_xavier',
+                        action="store_true",
+                        help='defines the initialization for the film network.')
 
     args = parser.parse_args()
     return args

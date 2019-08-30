@@ -262,10 +262,14 @@ def train(opt):
             target = text[:, 1:]  # without [GO] Symbol
             cost = criterion(preds.view(-1, preds.shape[-1]),
                              target.contiguous().view(-1))
+        if opt.print_grad:
+            print(f'model grad (sum): {model.grad.sum()} \n')
+            print(f'film_gen grad (sum): {film_gen.grad.sum()} \n')
 
         model.zero_grad()
         film_gen.zero_grad()
         cost.backward()
+
         # Gradient clipping with 5 (Default)
         torch.nn.utils.clip_grad_norm_(model.parameters(), opt.grad_clip)
         optimizer.step()

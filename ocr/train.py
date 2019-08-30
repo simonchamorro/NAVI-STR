@@ -171,6 +171,9 @@ def parse_args():
     parser.add_argument('--init_xavier',
                         action="store_true",
                         help='defines the initialization for the film network.')
+    parser.add_argument('--print_grad',
+                        action="store_true",
+                        help='prints the gradients of the networks.')
 
     args = parser.parse_args()
     return args

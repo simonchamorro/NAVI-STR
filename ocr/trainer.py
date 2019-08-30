@@ -267,7 +267,7 @@ def train(opt):
                 print(f'model grad (sum): {sum([p.grad.sum() for p in model.parameters()])}')
                 print(f'film_gen grad (sum): {sum([p.grad.sum() for p in film_gen.parameters()])}')
             except Exception:
-                import pdb; pdb.set_trace()
+                pass
         model.zero_grad()
         film_gen.zero_grad()
         cost.backward()

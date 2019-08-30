@@ -18,7 +18,7 @@ from utils import CTCLabelConverter, AttnLabelConverter, Averager
 from dataset import hierarchical_dataset, AlignCollate
 from model import Model
 from modules.film import FiLMGen
-from SEVN_gym.envs.utils import convert_street_name, convert_house_numbers
+from SEVN_gym.envs.utils import convert_street_name, convert_house_numbers, convert_house_vec_to_ints
 from load_ranges import get_random, get_sequence
 
 
@@ -82,7 +82,7 @@ def benchmark_all_eval(model, criterion, converter, opt, calculate_infer_time=Fa
     return None
 
 
-def validation(model, criterion, evaluation_loader, converter, opt, eval_data=None, film_gen=None):
+def validation(model, criterion, evaluation_loader, converter, opt, eval_data=None, film_gen=None, output_dir=None, final_eval=False):
     """ validation or evaluation """
     for p in model.parameters():
         p.requires_grad = False
@@ -95,6 +95,7 @@ def validation(model, criterion, evaluation_loader, converter, opt, eval_data=No
     valid_loss_avg = Averager()
 
     for i, (image_tensors, labels) in enumerate(evaluation_loader):
+
         batch_size = image_tensors.size(0)
         length_of_data = length_of_data + batch_size
         ids = labels
@@ -157,9 +158,15 @@ def validation(model, criterion, evaluation_loader, converter, opt, eval_data=No
         infer_time += forward_time
         valid_loss_avg.add(cost)
 
-        # calculate accuracy.
         j = 0
-        for pred, gt, text in zip(preds_str, labels, ed_text):
+
+        # Get conditioning text
+        cts = []
+        for k in range(cond_text.size(0)):
+            cts.append(convert_house_vec_to_ints(cond_text[k].cpu().numpy()))
+
+        # calculate accuracy and record results
+        for pred, gt, text, ct in zip(preds_str, labels, ed_text, cts):
             if 'Attn' in opt.Prediction:
                 pred = pred[:pred.find('[s]')]  # prune after "end of sentence" token ([s])
                 gt = gt[:gt.find('[s]')]
@@ -175,14 +182,13 @@ def validation(model, criterion, evaluation_loader, converter, opt, eval_data=No
                     d = edit_distance(word, pred)
                     distances[word] = d
                 pred = min(distances, key=distances.get)
-
             if pred == gt:
                 n_correct += 1
-                if eval_data:
-                    eval_data[i * batch_size + j][0].save(f"./result/{opt.experiment_name}/correct/sample_{i * batch_size + j}_pred_{pred}.png")
-            else:
-                if eval_data:
-                    eval_data[i * batch_size + j][0].save(f"./result/{opt.experiment_name}/incorrect/sample_{i * batch_size + j}_pred_{pred}.png")
+            if final_eval:
+                torchvision.utils.save_image(image[j].view(32, 100) * -1, f"{output_dir}/images/{i * batch_size + j}.png")
+                with open(f'{output_dir}/log_final.txt', 'a') as log_final:
+                    log_final.write(f'sample: {i * batch_size + j},' + \
+                        f' gt: {gt},' f' pred: {pred}, ' + f' ct: {ct},' f' was_correct: {pred == gt}\n')
 
             norm_ED += edit_distance(pred, gt) / len(gt)
             int_dist += int_distance(pred, gt)

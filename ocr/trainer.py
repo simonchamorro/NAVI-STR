@@ -54,6 +54,7 @@ def train(opt):
 
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
+        os.makedirs(output_dir + '/images')
 
     # Seed
     print('Random Seed: ', opt.manualSeed)
@@ -213,6 +214,7 @@ def train(opt):
     start_time = time.time()
     best_accuracy = -1
     best_norm_ED = 1e+6
+    best_int_dist = 1e+10
     i = start_iter
     patience = opt.patience
     print(f'Opt.patience: {patience}')
@@ -297,6 +299,7 @@ def train(opt):
                         converter, opt, film_gen=film_gen)
                 model.train()
                 film_gen.train()
+
                 for pred, gt in zip(preds[:5], labels[:5]):
                     if 'Attn' in opt.Prediction:
                         pred = pred[:pred.find('[s]')]
@@ -331,7 +334,21 @@ def train(opt):
                     patience -= 1
                     if patience == 0:
                         print("Early stopping.")
+
+                        # Writeout the final results, input images, predicted text, conditioning text (Extracted from 10x4, best accuracy)
+                        with open(f'{output_dir}/log_final.txt', 'a') as log_final:
+                            log_final.write(f'best_accuracy: {best_accuracy:0.3f},' + \
+                                f' best_norm_ED: {best_norm_ED:0.2f},' + f' best_int_dist: {best_int_dist:0.2f} \n')
+
+                            model.load_state_dict(torch.load(f'{output_dir}/best_accuracy.pth'))
+                            valid_loss, current_accuracy, current_norm_ED, \
+                                current_int_dist, preds, labels, infer_time, \
+                                length_of_data = validation(
+                                    model, criterion, valid_loader,
+                                    converter, opt, film_gen=film_gen,
+                                    output_dir=output_dir, final_eval=True)
                         break
+
                 if current_norm_ED < best_norm_ED:
                     best_norm_ED = current_norm_ED
                     torch.save(model.state_dict(),
@@ -340,6 +357,10 @@ def train(opt):
                     f' best_norm_ED: {best_norm_ED:0.2f}'
                 print(best_model_log)
                 log.write(best_model_log + '\n')
+
+                if current_int_dist < best_int_dist:
+                    best_int_dist = current_int_dist
+
                 if experiment is not None:
                     experiment.log_metric('Best Accuracy',
                                           best_accuracy, step=i)

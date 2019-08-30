@@ -12,24 +12,13 @@ class FiLMGen(nn.Module):
         self.emb_dim = emb_dim
         self.cond_feat_size = cond_feat_size  # gammas and betas
         self.num_layers = num_layers
-        if self.num_layers == 1:
-            self.layers = nn.Sequential(
-                nn.Linear(self.input_dim, self.cond_feat_size),
-            )
-        elif self.num_layers == 2:
-            self.layers = nn.Sequential(
-                nn.Linear(self.input_dim, self.emb_dim),
-                nn.ReLU(),
-                nn.Linear(self.emb_dim, self.cond_feat_size)
-            )
-        elif self.num_layers == 3:
-            self.layers = nn.Sequential(
-                nn.Linear(self.input_dim, self.emb_dim),
-                nn.ReLU(),
-                nn.Linear(self.emb_dim, self.emb_dim),
-                nn.ReLU(),
-                nn.Linear(self.emb_dim, self.cond_feat_size)
-            )
+        self.layers = nn.Sequential(
+            nn.Linear(self.input_dim, 128),
+            nn.Softplus(),
+            nn.Linear(128, 64),
+            nn.Softplus(),
+            nn.Linear(64, self.cond_feat_size)
+        )
 
 
     def forward(self, x):

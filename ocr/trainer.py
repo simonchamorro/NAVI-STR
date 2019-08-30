@@ -54,7 +54,6 @@ def train(opt):
 
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
-        os.makedirs(output_dir + '/images')
 
     # Seed
     print('Random Seed: ', opt.manualSeed)

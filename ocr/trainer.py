@@ -263,11 +263,8 @@ def train(opt):
             cost = criterion(preds.view(-1, preds.shape[-1]),
                              target.contiguous().view(-1))
         if opt.print_grad:
-            try:
-                print(f'model grad (sum): {sum([p.grad.sum() for p in model.parameters()])}')
-                print(f'film_gen grad (sum): {sum([p.grad.sum() for p in film_gen.parameters()])}')
-            except Exception:
-                import pdb; pdb.set_trace()
+            print(f'model grad (sum): {sum([p.grad.sum() for p in model.parameters()])}')
+            print(f'film_gen grad (sum): {sum([p.grad.sum() for p in film_gen.parameters()])}')
         model.zero_grad()
         film_gen.zero_grad()
         cost.backward()

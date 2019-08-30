@@ -263,9 +263,15 @@ def train(opt):
             cost = criterion(preds.view(-1, preds.shape[-1]),
                              target.contiguous().view(-1))
         if opt.print_grad:
-            print(f'model grad (sum): {model.grad.sum()} \n')
-            print(f'film_gen grad (sum): {film_gen.grad.sum()} \n')
-
+            try:
+                for i, weights, biases in enumerate(model.parameters()):
+                    print(f'model layer {i}, weight grad (sum): {weights.grad.sum()} \n')
+                    print(f'model layer {i}, bias grad (sum): {biases.grad.sum()} \n')
+                for i, weights, biases in enumerate(film_gen.parameters()):
+                    print(f'film_gen layer {i}, weight grad (sum): {weights.grad.sum()} \n')
+                    print(f'film_gen layer {i}, bias grad (sum): {biases.grad.sum()} \n')
+            except Exception:
+                pass
         model.zero_grad()
         film_gen.zero_grad()
         cost.backward()

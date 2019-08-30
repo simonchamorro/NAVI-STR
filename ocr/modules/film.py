@@ -1,5 +1,9 @@
 from torch import nn
 
+def init_weights(m):
+    if type(m) == nn.Linear:
+        nn.init.xavier_uniform(m.weight)
+        m.bias.data.fill_(0.01)
 
 class FiLMGen(nn.Module):
     def __init__(self,
@@ -19,12 +23,7 @@ class FiLMGen(nn.Module):
             nn.Linear(self.emb_dim, self.cond_feat_size)
         )
         if init_xavier:
-            self.layers.apply(self.init_weights)
-
-    def init_weights(m):
-        if type(m) == nn.Linear:
-            nn.init.xavier_uniform(m.weight)
-            m.bias.data.fill_(0.01)
+            self.layers.apply(init_weights)
 
     def forward(self, x):
         x = self.layers(x)

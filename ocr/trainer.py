@@ -271,7 +271,7 @@ def train(opt):
                     print(f'film_gen layer {i}, weight grad (sum): {weights.grad.sum()} \n')
                     print(f'film_gen layer {i}, bias grad (sum): {biases.grad.sum()} \n')
             except Exception:
-                pass
+                import pdb; pdb.set_trace()
         model.zero_grad()
         film_gen.zero_grad()
         cost.backward()

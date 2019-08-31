@@ -174,6 +174,9 @@ def parse_args():
     parser.add_argument('--print_grad',
                         action="store_true",
                         help='prints the gradients of the networks.')
+    parser.add_argument('--cond_feat_size',
+                        type=int, default=18944,
+                        help='prints the gradients of the networks.')
 
     args = parser.parse_args()
     return args

@@ -243,8 +243,7 @@ class ResNet(nn.Module):
         x = self.bn0_2(x)
         x = self.relu(x)
         x = self.maxpool1(x)
-        import pdb; pdb.set_trace()
-        if type(cond_params) == torch.Tensor and len(cond_params.size()) != 0:
+        if type(cond_params) == torch.Tensor and cond_params.size(1) != 0:
             x, cond_params = self.layer1((x, cond_params))
         else:
             x = self.layer1(x)
@@ -254,7 +253,7 @@ class ResNet(nn.Module):
         x = self.relu(x)
         x = self.maxpool2(x)
 
-        if type(cond_params) == torch.Tensor and len(cond_params.size()) != 0:
+        if type(cond_params) == torch.Tensor and cond_params.size(1) != 0:
            x, cond_params = self.layer2((x, cond_params))
         else:
             x = self.layer2(x)
@@ -273,7 +272,7 @@ class ResNet(nn.Module):
         x = self.bn3(x)
         x = self.relu(x)
 
-        if type(cond_params) == torch.Tensor and len(cond_params.size()) != 0:
+        if type(cond_params) == torch.Tensor and cond_params.size(1) != 0:
             x, cond_params = self.layer4((x, cond_params))
         else:
             x = self.layer4(x)

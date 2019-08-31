@@ -103,7 +103,7 @@ def train(opt):
         opt.input_channel = 3
     model = Model(opt)
 
-    film_gen = FiLMGen(input_dim=200, emb_dim=128, cond_feat_size=18944, init_xavier=opt.init_xavier)
+    film_gen = FiLMGen(input_dim=200, emb_dim=opt.film_emb, cond_feat_size=18944, init_xavier=opt.init_xavier)
     if torch.cuda.is_available():
         film_gen.cuda()
 

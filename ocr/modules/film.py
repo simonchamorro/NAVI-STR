@@ -8,7 +8,7 @@ def init_weights(m):
 class FiLMGen(nn.Module):
     def __init__(self,
         input_dim=200,
-        cond_feat_size=18944, # (4 num conditioning layers by two * 128 dimension) + (8 * 256) + (20 * 512) + (12 * 512)
+        cond_feat_size=18944, # (4  * 128 dimension) + (8 * 256) + (20 * 512) + (12 * 512)
         emb_dim=1000,
         init_xavier=False):
         super(FiLMGen, self).__init__()

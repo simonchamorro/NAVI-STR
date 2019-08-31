@@ -1,5 +1,3 @@
-import os
-
 import argparse
 import ruamel.yaml as yaml
 from skopt.space import Real, Integer, Categorical
@@ -95,7 +93,7 @@ def parse_args():
                                 multiplied to total number of data.''')
     parser.add_argument('--batch_max_length',
                         type=int, default=25,
-                        help='Maximum-label-length.')
+                        help='Maximum label length.')
     parser.add_argument('--imgH',
                         type=int, default=32,
                         help='The height of the input image.')
@@ -164,16 +162,19 @@ def parse_args():
                         help='Define the hidden size for the film network.')
     parser.add_argument('--film_layers',
                         type=int, default=1,
-                        help='Define the number of hidden layers for the film network.')
+                        help='''Define the number of hidden layers for the
+                                film network.''')
     parser.add_argument('--film_type',
                         type=str, default='mlp',
-                        help='Define the network architecture for film generator network.')
+                        help='''Define the network architecture for film
+                              generator network.''')
     parser.add_argument('--init_xavier',
                         action="store_true",
-                        help='defines the initialization for the film network.')
+                        help='''Defines the initialization for the film
+                                network.''')
     parser.add_argument('--print_grad',
                         action="store_true",
-                        help='prints the gradients of the networks.')
+                        help='Prints the gradients of the networks.')
 
     args = parser.parse_args()
     return args

@@ -168,6 +168,8 @@ def validation(model, criterion, evaluation_loader, converter, opt, eval_data=No
         # calculate accuracy and record results
         for pred, gt, text, ct in zip(preds_str, labels, ed_text, cts):
             print(f'img {j}: {image[j].sum()}')
+            print(f'img {j} min: {image[j].min()}')
+            print(f'img {j} max: {image[j].max()}')
             if 'Attn' in opt.Prediction:
                 pred = pred[:pred.find('[s]')]  # prune after "end of sentence" token ([s])
                 gt = gt[:gt.find('[s]')]
@@ -186,7 +188,7 @@ def validation(model, criterion, evaluation_loader, converter, opt, eval_data=No
             if pred == gt:
                 n_correct += 1
             if final_eval:
-                torchvision.utils.save_image(image[j].view(32, 100) * -1, f"{output_dir}/{i * batch_size + j}.png")
+                torchvision.utils.save_image(image[j].view(32, 100), f"{output_dir}/{i * batch_size + j}.png")
                 with open(f'{output_dir}/log_final.txt', 'a') as log_final:
                     log_final.write(f'sample: {i * batch_size + j},' + \
                         f' gt: {gt},' f' pred: {pred}, ' + f' ct: {ct},' f' was_correct: {pred == gt}\n')

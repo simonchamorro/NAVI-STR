@@ -105,6 +105,8 @@ def train(opt):
 
     if opt.rgb:
         opt.input_channel = 3
+    import pdb; pdb.set_trace()
+
     model = Model(opt)
 
     film_gen = FiLMGen(input_dim=200, emb_dim=opt.film_emb, cond_feat_size=opt.cond_feat_size, init_xavier=opt.init_xavier)
@@ -241,7 +243,7 @@ def train(opt):
         labels = [label.split('_')[0] for label in labels]
         cond_house_numbers = [get_random(
             int(img_id.split('_')[0]),
-            img_id.split('_')[1], num_hn) for img_id in ids]
+            img_id.split('_')[1], opt.num_cond_hn) for img_id in ids]
         # Convert house number into vector of size 40.
         # Only house number with under 4 digits can be converted.
         assert all([len(str(n)) <= 4 for l in cond_house_numbers for n in l]),\

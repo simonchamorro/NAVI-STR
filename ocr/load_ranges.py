@@ -59,6 +59,7 @@ def get_random(num, street, qty):
 def get_sequence(num, street, qty):
     ranges = load_ranges('./data/address_ranges.txt')
     num_range = find_range(num, street, ranges)
+    import pdb; pdb.set_trace()
     segment1 = num_range[:num_range.index(num)]
     segment2 = num_range[num_range.index(num) + 1:]
     if random.choice([True, False]):

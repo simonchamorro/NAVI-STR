@@ -241,7 +241,6 @@ def train(opt):
         # Get the list of house number
         labels = [label.split('_')[0] for label in labels]
         if opt.sequential_cond:
-            import pdb; pdb.set_trace()
             cond_house_numbers = [get_sequence(
                 int(img_id.split('_')[0]),
                 img_id.split('_')[1], opt.num_cond_hn) for img_id in ids]

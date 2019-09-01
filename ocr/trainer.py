@@ -244,11 +244,12 @@ def train(opt):
             cond_house_numbers = []
             for img_id in ids:
                 try:
-                    print(img_id)
                     cond_house_numbers.append(get_sequence(
                         int(img_id.split('_')[0]),
                         img_id.split('_')[1], opt.num_cond_hn))
-                except:
+                except Exception as e:
+                    print(img_id)
+                    print(e)
                     import pdb; pdb.set_trace()
         else:
             cond_house_numbers = [get_random(

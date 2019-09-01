@@ -61,10 +61,10 @@ def get_sequence(num, street, qty):
     num_range = find_range(num, street, ranges)
     segment1 = num_range[:num_range.index(num)]
     segment2 = num_range[num_range.index(num) + 1:]
-    if len(segment1) >= len(segment2):
+    if random.choice([True, False]):
         sequence = random.choices(segment1, k=qty)
         sequence.sort()
-    elif len(segment2) > len(segment1):
+    else:
         sequence = random.choices(segment2, k=qty)
         sequence.sort(reverse=True)
     return sequence

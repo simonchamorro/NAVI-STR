@@ -26,7 +26,7 @@ from model import Model
 from modules.film import FiLMGen
 from test import validation
 from SEVN_gym.envs.utils import convert_house_numbers
-from load_ranges import get_random
+from load_ranges import get_random, get_sequence
 
 
 def train(opt):
@@ -240,13 +240,19 @@ def train(opt):
         # Labels are under the form 'doornumber_streetname'
         # Get the list of house number
         labels = [label.split('_')[0] for label in labels]
-        cond_house_numbers = [get_random(
-            int(img_id.split('_')[0]),
-            img_id.split('_')[1], opt.num_cond_hn) for img_id in ids]
+        if opt.sequential_cond:
+            import pdb; pdb.set_trace()
+            cond_house_numbers = [get_sequence(
+                int(img_id.split('_')[0]),
+                img_id.split('_')[1], opt.num_cond_hn) for img_id in ids]
+        else:
+            cond_house_numbers = [get_random(
+                int(img_id.split('_')[0]),
+                img_id.split('_')[1], opt.num_cond_hn) for img_id in ids]
         # Convert house number into vector of size 40.
         # Only house number with under 4 digits can be converted.
         assert all([len(str(n)) <= 4 for l in cond_house_numbers for n in l]),\
-            'Maximum door numbre = 4'
+            'Maximum door numbers = 4'
         cond_house_numbers = [
             convert_house_numbers(n) for l in cond_house_numbers for n in l]
         cond_house_numbers = torch.FloatTensor(cond_house_numbers)

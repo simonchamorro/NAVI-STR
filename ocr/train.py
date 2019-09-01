@@ -188,6 +188,9 @@ def parse_args():
     parser.add_argument('--num_cond_hn',
                         type=int, default=5,
                         help='number of conditioning house numbers.')
+    parser.add_argument('--sequential_cond',
+                        action="store_true",
+                        help='number of conditioning house numbers.')
 
     args = parser.parse_args()
     return args

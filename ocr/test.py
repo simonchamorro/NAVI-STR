@@ -167,6 +167,9 @@ def validation(model, criterion, evaluation_loader, converter, opt, eval_data=No
 
         # calculate accuracy and record results
         for pred, gt, text, ct in zip(preds_str, labels, ed_text, cts):
+            import pdb; pdb.set_trace()
+            torchvision.utils.save_image(image[j].view(32, 100) * -1, f"{output_dir}/{i * batch_size + j}.png")
+
             if 'Attn' in opt.Prediction:
                 pred = pred[:pred.find('[s]')]  # prune after "end of sentence" token ([s])
                 gt = gt[:gt.find('[s]')]

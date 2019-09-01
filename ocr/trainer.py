@@ -286,7 +286,6 @@ def train(opt):
             target = text[:, 1:]  # without [GO] Symbol
             cost = criterion(preds.view(-1, preds.shape[-1]),
                              target.contiguous().view(-1))
-            import pdb; pdb.set_trace()
         if opt.print_grad:
             try:
                 print(f'model grad (sum): {sum([p.grad.sum() for p in model.parameters()])}')

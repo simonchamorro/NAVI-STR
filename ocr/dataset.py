@@ -186,11 +186,28 @@ class LmdbDataset(Dataset):
 
                 # opt.batch_max_length is the maximum label length, can be
                 # set in train.py. The examples are filtered based on that.
-                if len(label) > self.opt.batch_max_length:
-                    print(f'The length of the label is longer than' +
-                          f' max_length: length {len(label)}, {label}' +
-                          f' in dataset {self.root}')
-                    continue
+
+                if opt.predict_number:
+                    to_filter = label.split('_')[0]
+                else:
+                    to_filter = label
+
+                if opt.label_filter_type == 'leq':
+                    if len(to_filter) > self.opt.batch_max_length:
+                        print(f'The length of the label is longer than' +
+                              f' max_length: length {len(label)}, {label}' +
+                              f' in dataset {self.root}')
+                        continue
+
+                elif opt.label_filter_type == 'eq':
+                    if len(to_filter) != self.opt.batch_max_length:
+                        print(f'The length of the label is different than' +
+                              f' max_length: length {len(label)}, {label}' +
+                              f' in dataset {self.root}')
+                        continue
+                else:
+                    print('opt.label_filter_type should be in ["leq", "eq"]')
+                    sys.exit(0)
 
                 self.filtered_index_list.append(index)
 

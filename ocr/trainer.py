@@ -105,7 +105,6 @@ def train(opt):
 
     if opt.rgb:
         opt.input_channel = 3
-    import pdb; pdb.set_trace()
 
     model = Model(opt)
 

@@ -114,6 +114,13 @@ def parse_args():
                         action='store_true',
                         help='''Whether to keep ratio then pad for
                                 image resize.''')
+    parser.add_argument('--predict_number',
+                        action='store_true',
+                        help='Whether to predict the number.')
+    parser.add_argument('--label_filter_type',
+                        default='leq',
+                        help='''How to filter the labels depending to
+                                --batch_max_length. In ["leq", "eq"]''')
     """ Model Architecture """
     parser.add_argument('--Transformation',
                         type=str, default='TPS',

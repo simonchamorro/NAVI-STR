@@ -245,7 +245,7 @@ if __name__ == '__main__':
             print(fname)
             save_imgs(img_rgb, img_grey, input_nopad, input_pad, label, fname)
 
-    # Check intersection between data sets.
+    # Check intersection between data sets
     assert not bool(set(labels_sets[0]) & set(labels_sets[1]))
     assert not bool(set(labels_sets[0]) & set(labels_sets[2]))
     assert not bool(set(labels_sets[1]) & set(labels_sets[2]))

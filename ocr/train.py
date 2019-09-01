@@ -176,7 +176,10 @@ def parse_args():
                         help='prints the gradients of the networks.')
     parser.add_argument('--cond_feat_size',
                         type=int, default=18944,
-                        help='prints the gradients of the networks.')
+                        help='number of conditioning features (gamms and betas).')
+    parser.add_argument('--num_cond_hn',
+                        type=int, default=5,
+                        help='number of conditioning house numbers.')
 
     args = parser.parse_args()
     return args

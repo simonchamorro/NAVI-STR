@@ -228,14 +228,13 @@ def train(opt):
 
         ids = labels
         labels = [label.split('_')[0] for label in labels]
-        num_hn = 5
         cond_house_numbers = [get_random(
             int(img_id.split('_')[0]),
-            img_id.split('_')[1], num_hn) for img_id in ids]
+            img_id.split('_')[1], opt.num_cond_hn) for img_id in ids]
         cond_house_numbers = [
             convert_house_numbers(n) for l in cond_house_numbers for n in l]
         cond_house_numbers = torch.FloatTensor(cond_house_numbers)
-        cond_text = cond_house_numbers.view(-1, num_hn * 40)
+        cond_text = cond_house_numbers.view(-1, opt.num_cond_hn * 40)
 
         image = image_tensors
 

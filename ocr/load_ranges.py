@@ -57,17 +57,22 @@ def get_random(num, street, qty):
 
 
 def get_sequence(num, street, qty):
-    ranges = load_ranges('./data/address_ranges.txt')
-    num_range = find_range(num, street, ranges)
-    segment1 = num_range[:num_range.index(num)]
-    segment2 = num_range[num_range.index(num) + 1:]
-    if random.choice([True, False]):
-        sequence = random.choices(segment1, k=qty)
-        sequence.sort()
-    else:
-        sequence = random.choices(segment2, k=qty)
-        sequence.sort(reverse=True)
-    return sequence
+    try:
+        ranges = load_ranges('./data/address_ranges.txt')
+        num_range = find_range(num, street, ranges)
+        segment1 = num_range[:num_range.index(num)]
+        segment2 = num_range[num_range.index(num) + 1:]
+        if random.choice([True, False]):
+            sequence = random.choices(segment1, k=qty)
+            sequence.sort()
+        else:
+            sequence = random.choices(segment2, k=qty)
+            sequence.sort(reverse=True)
+        return sequence
+    except Exception as e:
+        import pdb; pdb.set_trace()
+        pass
+    return
 
 
 def load_ranges(filename):

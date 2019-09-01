@@ -241,13 +241,15 @@ def train(opt):
         # Get the list of house number
         labels = [label.split('_')[0] for label in labels]
         if opt.sequential_cond:
-            print(img_id)
-            try:
-                cond_house_numbers = [get_sequence(
-                    int(img_id.split('_')[0]),
-                    img_id.split('_')[1], opt.num_cond_hn) for img_id in ids]
-            except:
-                import pdb; pdb.set_trace()
+            cond_house_numbers = []
+            for img_id in ids:
+                try:
+                    print(img_id)
+                    cond_house_numbers.append(get_sequence(
+                        int(img_id.split('_')[0]),
+                        img_id.split('_')[1], opt.num_cond_hn))
+                except:
+                    import pdb; pdb.set_trace()
         else:
             cond_house_numbers = [get_random(
                 int(img_id.split('_')[0]),

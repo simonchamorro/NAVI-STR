@@ -8,5 +8,6 @@ setup(
                       'tables', 'numpy', 'torch==1.2', 'torchvision',
                       'matplotlib', 'tensorflow', 'tensorboard',
                       'terminaltables', 'pillow', 'tqdm', 'lmdb',
-                      'nltk', 'natsort', 'easydict', 'ruamel.yaml']
+                      'nltk', 'natsort', 'easydict', 'ruamel.yaml',
+                      'h5py']
 )

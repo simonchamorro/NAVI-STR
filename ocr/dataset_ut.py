@@ -73,7 +73,7 @@ def save_imgs(img_rgb, img_grey, input_nopad, input_pad, label, fname):
     axarr[1, 0].set_title('Input without padding')
     # Transformed grayscale image with padding
     axarr[1, 1].imshow(input_pad, cmap='gray', vmin=-1, vmax=1)
-    axarr[1, 1].set_title('Input with padding')
+    axarr[1, 1].set_title('Input with right padding')
     f.suptitle(label)
     plt.savefig(fname)
     plt.close()
@@ -135,7 +135,8 @@ if __name__ == '__main__':
 
             # Input without padding
             opt.keep_ratio_with_pad = False
-            AlignCollate_nopad = AlignCollate()
+            AlignCollate_nopad = AlignCollate(opt.imgH, opt.imgW,
+                                              opt.keep_ratio_with_pad)
             image_tensor, label_align = AlignCollate_nopad([(img, label)])
             assert label_align[0] == label
             img_tensor = image_tensor[0, 0, :, :]
@@ -143,7 +144,8 @@ if __name__ == '__main__':
 
             # Input with padding
             opt.keep_ratio_with_pad = True
-            AlignCollate_pad = AlignCollate()
+            AlignCollate_pad = AlignCollate(opt.imgH, opt.imgW,
+                                            opt.keep_ratio_with_pad)
             image_tensor, label_align = AlignCollate_pad([(img, label)])
             assert label_align[0] == label
             img_tensor_pad = image_tensor[0, 0, :, :]

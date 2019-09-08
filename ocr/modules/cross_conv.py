@@ -26,11 +26,6 @@ class CrossConvFilterGenerator(nn.Module):
         self.inputs_dim  = inputs_dim
         self.outputs_dim = outputs_dim  # BxCixCoxkHxkW
         self.latents_dim = latents_dim
-        self.init_xavier = init_xavier
-
-        self.built = False
-
-    def build(self,):
 
         layers = [ nn.Linear(self.inputs_dim, self.latents_dim[0]), nn.ReLU() ]
         for i in range(0, len(self.latents_dim)-1):
@@ -40,11 +35,8 @@ class CrossConvFilterGenerator(nn.Module):
 
         self.layers = nn.Sequential(*layers)
 
-        if self.init_xavier:
+        if init_xavier:
             self.layers.apply(init_weights)
 
     def forward(self, inputs):
-        if not self.built:
-            self.build()
-            self.built = True
         return self.layers(inputs)

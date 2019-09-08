@@ -9,7 +9,7 @@ def init_weights(m):
         m.bias.data.fill_(0.01)
 
 def crossconv2d(inputs, filters, stride=1, padding=1, dilation=1, groups=1):
-    assert inputs.size(0) == filters.size(0), "oust!"
+    assert inputs.size(0) == filters.size(0), "Mismatch of size along the batch axis between `inputs` and `filters`!"
     _inputs  = inputs.unsqueeze(1)  # BxCixHxW --> Bx1xCixHxW
     _filters = filters              # BxCixCoxkHxkW
     tensors = [F.conv2d(_inputs[index], _filters[index], stride=stride, padding=padding, dilation=dilation, groups=groups) for index in range(inputs.size(0))]

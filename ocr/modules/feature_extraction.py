@@ -136,32 +136,33 @@ class BasicBlock(nn.Module):
 
     def forward(self, x):
         if len(x) == 2:
-            residual = x[0]
-            cond_vars = x[1]
+            from ocr.modules.cross_conv import crossconv2d
+
+            residual, others = x
             x = x[0]
 
             dim = int(self.bn1.weight.shape[0])
-            gammas1 = cond_vars[:, :dim] + 1
-            betas1 = cond_vars[:, dim: 2 * dim]
-            gammas2 = cond_vars[:, 2 * dim: 3 * dim] + 1
-            betas2 = cond_vars[:, 3 * dim: 4 * dim]
-            cond_vars = cond_vars[:, 4 * dim:]
 
-            out = self.conv1(x)
+            shift1 = self.conv1.weight.size().sum()
+            shift2 = self.conv2.weight.size().sum()
+
+            filters1 = others[:, :shift1]
+            filters2 = others[:, shift1:shift1+shift2]
+            others   = others[:, shift1+shift2:]
+
+            out = crossconv2d(inputs=out, filters=filters1)
             out = self.bn1(out)
-            out = (gammas1.view(out.shape[0], out.shape[1], 1, 1) * out) + betas1.view(x.shape[0], out.shape[1], 1, 1)
             out = self.relu(out)
 
-            out = self.conv2(out)
+            out = crossconv2d(inputs=out, filters=filters2)
             out = self.bn2(out)
-            out = (gammas2.view(out.shape[0], out.shape[1], 1, 1) * out) + betas2.view(out.shape[0], out.shape[1], 1, 1)
 
             if self.downsample is not None:
                 residual = self.downsample(x)
             out += residual
             out = self.relu(out)
 
-            return out, cond_vars
+            return out, others
 
         else:
             residual = x

@@ -5,6 +5,11 @@ def init_weights(m):
         nn.init.xavier_uniform(m.weight)
         m.bias.data.fill_(0.01)
 
+def film2d(inputs, gammas, betas):
+    gammas = (gammas + 1.).reshape(inputs.shape[0], inputs.shape[1], 1, 1)
+    betas  = betas.reshape(inputs.shape[0], inputs.shape[1], 1, 1)
+    return (gammas*inputs) + betas
+
 class FiLMGen(nn.Module):
     def __init__(self,
         input_dim=200,

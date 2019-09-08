@@ -24,6 +24,8 @@ from utils import CTCLabelConverter, AttnLabelConverter, Averager
 from dataset import hierarchical_dataset, AlignCollate, Batch_Balanced_Dataset
 from model import Model
 from modules.film import FiLMGen
+from ocr.modules.cross_conv import CrossConvFilterGenerator
+
 from test import validation
 from SEVN_gym.envs.utils import convert_house_numbers
 from load_ranges import get_random, get_sequence
@@ -108,7 +110,8 @@ def train(opt):
 
     model = Model(opt)
 
-    film_gen = FiLMGen(input_dim=200, emb_dim=opt.film_emb, cond_feat_size=opt.cond_feat_size, init_xavier=opt.init_xavier)
+    # film_gen = FiLMGen(input_dim=200, emb_dim=opt.film_emb, cond_feat_size=opt.cond_feat_size, init_xavier=opt.init_xavier)
+    film_gen = CrossConvFilterGenerator(input_dim=200, latents_dim=(1024,), init_xavier=opt.init_xavier)
     if torch.cuda.is_available():
         film_gen.cuda()
 

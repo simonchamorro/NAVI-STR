@@ -136,21 +136,21 @@ class BasicBlock(nn.Module):
 
     def forward(self, x):
         if len(x) == 2:
-            from ocr.modules.cross_conv import crossconv2d
+            from modules.cross_conv import crossconv2d
 
             residual, others = x
             x = x[0]
 
             dim = int(self.bn1.weight.shape[0])
 
-            shift1 = self.conv1.weight.size().sum()
-            shift2 = self.conv2.weight.size().sum()
+            shift1 = sum(list(self.conv1.weight.size()))
+            shift2 = sum(list(self.conv2.weight.size()))
 
             filters1 = others[:, :shift1]
             filters2 = others[:, shift1:shift1+shift2]
             others   = others[:, shift1+shift2:]
 
-            out = crossconv2d(inputs=out, filters=filters1)
+            out = crossconv2d(inputs=x, filters=filters1)
             out = self.bn1(out)
             out = self.relu(out)
 

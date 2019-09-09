@@ -111,7 +111,7 @@ def train(opt):
     model = Model(opt)
 
     # film_gen = FiLMGen(input_dim=200, emb_dim=opt.film_emb, cond_feat_size=opt.cond_feat_size, init_xavier=opt.init_xavier)
-    film_gen = CrossConvFilterGenerator(input_dim=200, latents_dim=(1024,), init_xavier=opt.init_xavier)
+    film_gen = CrossConvFilterGenerator(inputs_dim=200, latents_dim=(1024,), init_xavier=opt.init_xavier)
     if torch.cuda.is_available():
         film_gen.cuda()
 

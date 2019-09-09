@@ -24,7 +24,7 @@ from utils import CTCLabelConverter, AttnLabelConverter, Averager
 from dataset import hierarchical_dataset, AlignCollate, Batch_Balanced_Dataset
 from model import Model
 from modules.film import FiLMGen
-from ocr.modules.cross_conv import CrossConvFilterGenerator
+from modules.cross_conv import CrossConvFilterGenerator
 
 from test import validation
 from SEVN_gym.envs.utils import convert_house_numbers

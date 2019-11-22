@@ -103,8 +103,8 @@ def train(opt):
     if opt.rgb:
         opt.input_channel = 3
     model = Model(opt)
-
-    film_gen = FiLMGen(input_dim=200, emb_dim=1000, cond_feat_size=18944)
+    import pdb; pdb.set_trace()
+    film_gen = FiLMGen(input_dim=200, emb_dim=1000, cond_feat_size=18944, transformer=opt.film_transformer)
     if torch.cuda.is_available():
         film_gen.cuda()
 
@@ -171,14 +171,14 @@ def train(opt):
     # Setup optimizer
     if opt.adam:
         optimizer = optim.Adam(
-            filtered_parameters, lr=opt.lr, betas=(opt.beta1, 0.999))
+            filtered_parameters, lr=float(opt.lr), betas=(opt.beta1, 0.999))
         film_optimizer = optim.Adam(
-            film_filtered_params, lr=opt.film_lr, betas=(opt.beta1, 0.999))
+            film_filtered_params, lr=float(opt.film_lr), betas=(opt.beta1, 0.999))
     else:
         optimizer = optim.Adadelta(
-            filtered_parameters, lr=opt.lr, rho=opt.rho, eps=opt.eps)
+            filtered_parameters, lr=float(opt.lr), rho=opt.rho, eps=opt.eps)
         film_optimizer = optim.Adadelta(
-            film_filtered_params, lr=opt.film_lr, rho=opt.rho, eps=opt.eps)
+            film_filtered_params, lr=float(opt.film_lr), rho=opt.rho, eps=opt.eps)
     print('Optimizer:')
     print(optimizer)
 

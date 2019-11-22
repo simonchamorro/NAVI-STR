@@ -165,8 +165,8 @@ def parse_args():
     parser.add_argument('--film_layers',
                         type=int, default=1,
                         help='Define the number of hidden layers for the film network.')
-    parser.add_argument('--film_type',
-                        type=str, default='mlp',
+    parser.add_argument('--film_transformer',
+                        action='store_true',
                         help='Define the network architecture for film generator network.')
 
     args = parser.parse_args()

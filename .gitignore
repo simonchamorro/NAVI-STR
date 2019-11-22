@@ -5,11 +5,12 @@
 .DS_Store
 *.egg-info/
 *.egg
-
+data
+.idea
 PyTorch-YOLOv3/logs/*
 PyTorch-YOLOv3/checkpoints/*
 PyTorch-YOLOv3/weights/darknet53.conv.74
-PyTorch-YOLOv3/data/coco
+PyTorch-YOLOv3/data/
 ocr/pths/
 ocr/result/
 ocr/saved_models/

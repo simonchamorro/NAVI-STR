@@ -69,10 +69,13 @@ def process(fname):
         x = int(i * W / 16)
         y = 0
         out_fname = crops_path + f'{frame_num}_{i + 1}.png'
-        if do_img and not os.path.isfile(out_fname):
-            crop_img(img, x, y, out_fname)
+        labels = []
         if do_labels:
-            process_frame_labels(frame_num, i, x)
+            labels = process_frame_labels(frame_num, i, x)
+        if labels:
+            if labels[0][1] != 'street_sign':
+                if do_img and not os.path.isfile(out_fname):
+                    crop_img(img, x, y, out_fname)
 
 def process_frame_labels(frame_num, i, x):
     labels = label_df[label_df.frame == int(frame_num)]
@@ -86,7 +89,7 @@ def process_frame_labels(frame_num, i, x):
             frame = float(frame_num) + (i+1)/100
             temp.append((frame, labels.iloc[j].obj_type, labels.iloc[j].house_number, \
             labels.iloc[j].street_name, label_x_min, label_x_max, labels.iloc[j].y_min, labels.iloc[j].y_max))
-     
+
     if len(temp) != 0:
         with open(f'{yolo_labels_path}{frame_num}_{i + 1}.txt', 'w') as f:
             for tup in temp:
@@ -98,6 +101,7 @@ def process_frame_labels(frame_num, i, x):
                 f.write(f"{class_idx} {x_center} {y_center} {width} {height}\n")
         f.close()
     new_labels.extend(temp)
+    return temp
 
 def class_to_idx(obj_type):
     if obj_type == "door":
@@ -120,15 +124,15 @@ def crop_img(img, x, y, out_fname):
 
 
 panos_path = "./data/panos/"
-crops_path = "./PyTorch-YOLOv3/data/sevn/images/"
+crops_path = "./PyTorch-YOLOv3/data/sevn/images_hw/"
 labels_path = "./data/labels/"
 yolo_labels_path = "./PyTorch-YOLOv3/data/sevn/labels/"
 
 W = int(3840)
-H = int(1920)
-crop_W = int(1280)
-crop_H = int(1280)
-crop_margin = int(H/6)
+H = int(1280)
+crop_W = int(1067)
+crop_H = int(800)
+crop_margin = int(240)
 total_frames = len(os.listdir(panos_path))
 frames = [fname.split(".")[0].split("_")[-1] for fname in os.listdir(panos_path)]
 paths = [labels_path + "raw/pano_" + str(frame).zfill(6) + ".xml" for frame in frames]
@@ -138,7 +142,7 @@ label_index = label_df.groupby(label_df.frame).cumcount()
 label_df.index = pd.MultiIndex.from_arrays([label_df.frame, label_index], names=["frame", "label"])
 label_df.sort_index(inplace=True)
 
-do_img = False
+do_img = True
 do_labels = True
 new_labels = []    
 

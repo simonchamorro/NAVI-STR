@@ -16,7 +16,7 @@ from math import pi
 import numpy as np
 
 class NFOV():
-    def __init__(self, height=500, width=800):
+    def __init__(self, height=1000, width=1600):
         self.FOV = [.36, 0.675]
         self.PI = pi
         self.PI_2 = pi * 0.5
@@ -71,7 +71,7 @@ class NFOV():
         D_idx = np.add(base_y2, x2)
 
         flat_img = np.reshape(self.frame, [-1, self.frame_channel])
-
+        # return flat_img.reshape((1280, 3840, 3))[:,:,0]
         A = np.take(flat_img, A_idx, axis=0)
         B = np.take(flat_img, B_idx, axis=0)
         C = np.take(flat_img, C_idx, axis=0)
@@ -87,7 +87,7 @@ class NFOV():
         BB = np.multiply(B, np.array([wb, wb, wb]).T)
         CC = np.multiply(C, np.array([wc, wc, wc]).T)
         DD = np.multiply(D, np.array([wd, wd, wd]).T)
-        nfov = np.reshape(np.round(AA + BB + CC + DD).astype(np.uint8), [self.height, self.width, 3])
+        nfov = np.reshape((AA + BB + CC + DD).astype(np.uint8), [self.height, self.width, 3])
         # import matplotlib.pyplot as plt
         # plt.imshow(nfov)
         # plt.show()

@@ -15,7 +15,8 @@ dest_l = "./PyTorch-YOLOv3/data/sevn/"
 test = []
 train = []
 labels_file = "/home/martin/code/SEVN/SEVN_gym/data/label.hdf5"
-labels_df = pd.read_hdf(labels_file, key="df", index=False)
+h_labels_file = "/home/martin/code/SEVN/SEVN_gym/data/label.hdf5"
+labels_df = pd.read_hdf(dest_l + "humanware_labels.hdf5", key="df", index=False)
 
 labels = labels_df[labels_df['obj_type'] != 'street_sign']
 
@@ -27,6 +28,7 @@ for img in tqdm(os.listdir(images_path), desc="Moving empty images to another fo
     frame = img.split('_')[1].split('.')[0]
     i = 0
 
+    import pdb; pdb.set_trace()
     for idx, label in labels[labels.frame == int(frame)].iterrows():
         ratio = (3840 / 226)
         dim = (500, 800)
@@ -39,16 +41,23 @@ for img in tqdm(os.listdir(images_path), desc="Moving empty images to another fo
         label_img[int(label.y_max * ratio), int(label.x_max * ratio)] = 3
 
         coords = nfov.toNFOV(label_img, center_point).nonzero()
-        labels_df.at[int(frame), 'x_min'][i] = coords[0].min()
-        labels_df.at[int(frame), 'x_max'][i] = coords[0].max()
-        labels_df.at[int(frame), 'y_min'][i] = coords[1].min()
-        labels_df.at[int(frame), 'y_max'][i] = coords[1].max()
-
-        rimg = nfov.toNFOV(im.imread(images_path + img), center_point)
-        im.imwrite(dest + img, rimg)
+        try:
+            if type(labels_df.at[int(frame), 'x_min']) == np.int64:
+                labels_df.at[int(frame), 'x_min'] = coords[0].min()
+                labels_df.at[int(frame), 'x_max'] = coords[0].max()
+                labels_df.at[int(frame), 'y_min'] = coords[1].min()
+                labels_df.at[int(frame), 'y_max'] = coords[1].max()
+            else:
+                labels_df.at[int(frame), 'x_min'][i] = coords[0].min()
+                labels_df.at[int(frame), 'x_max'][i] = coords[0].max()
+                labels_df.at[int(frame), 'y_min'][i] = coords[1].min()
+                labels_df.at[int(frame), 'y_max'][i] = coords[1].max()
+        except Exception:
+            pass
+        # rimg = nfov.toNFOV(im.imread(images_path + img), center_point)
+        # im.imwrite(dest + img, rimg)
         i += 1
-import pdb; pdb.set_trace()
-labels_df.to_hdf(dest_l)
+labels_df.to_hdf(dest_l + "humanware_labels.hdf5", key="df", index=False)
     #
     # if frame in paths:
     #     copyfile(images_path + frame, doors_and_hn_images_path + frame)

@@ -16,3 +16,4 @@ ocr/result/
 ocr/saved_models/
 data/processed/
 data/raw/
+ocr/image_test/

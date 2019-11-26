@@ -13,11 +13,19 @@ def interpolate(min_num, max_num):
 def find_range(num, street, ranges):
     '''
     Find address ranges for a given segment street.
+
+    Args:
+        num (int): Targeted house number.
+        street (str): Street segment.
+        ranges (list): list of dict containing street segment information and
+        address ranges. E.g. {'street': 'saint-laurent', 'side': 'E',
+        'from': 'beaubien', 'to': 'saint-zotique', 'min': 6537, 'max': 6743,
+        'range': [6537, 6539, 6541, 6543]}
     '''
     num_range = None
     for segment in ranges:
         if street == segment['street'] and num >= segment['min'] \
-        and num <= segment['max'] and (segment['max'] - num) % 2 == 0:
+          and num <= segment['max'] and (segment['max'] - num) % 2 == 0:
             num_range = segment['range']
     if num_range is None:
         print(street)
@@ -27,8 +35,16 @@ def find_range(num, street, ranges):
 
 def get_random(num, street, qty):
     '''
-    Get random neighboor nb address in the street segment.
-    Note that you can get the actual address.
+    Get random neighboor house number from an address in the street segment.
+    Note that you can get the targeted house number.
+
+    Args:
+        num (int): Targeted house number.
+        street (str): Street segment.
+        qty (int): Number of neighboor house number to sample.
+
+    Returns:
+        random_range (list): List of neighboor house number.
     '''
     ranges = load_ranges('./data/address_ranges.txt')
     random_range = find_range(num, street, ranges)
@@ -41,17 +57,31 @@ def get_random(num, street, qty):
 
 
 def get_sequence(num, street, qty):
-    ranges = load_ranges('./data/address_ranges.txt')
-    num_range = find_range(num, street, ranges)
-    segment1 = num_range[:num_range.index(num)]
-    segment2 = num_range[num_range.index(num) + 1:]
-    if len(segment1) >= len(segment2):
-        sequence = random.choices(segment1, k=qty)
-        sequence.sort()
-    elif len(segment2) > len(segment1):
-        sequence = random.choices(segment2, k=qty)
-        sequence.sort(reverse=True)
-    return sequence
+    try:
+        ranges = load_ranges('./data/address_ranges.txt')
+        num_range = find_range(num, street, ranges)
+        segment1 = num_range[:num_range.index(num)]
+        segment2 = num_range[num_range.index(num) + 1:]
+
+        if len(segment1) > 0 and len(segment2) > 0:
+            if random.choice([True, False]):
+                sequence = random.choices(segment1, k=qty)
+                sequence.sort()
+            else:
+                sequence = random.choices(segment2, k=qty)
+                sequence.sort(reverse=True)
+        elif len(segment1) > 0:
+            sequence = random.choices(segment1, k=qty)
+            sequence.sort()
+        else:
+            sequence = random.choices(segment2, k=qty)
+            sequence.sort(reverse=True)
+        return sequence
+
+    except Exception as e:
+        import pdb; pdb.set_trace()
+        pass
+    return
 
 
 def load_ranges(filename):

@@ -19,14 +19,13 @@ import torch.backends.cudnn as cudnn
 import torch.nn.init as init
 import torch.optim as optim
 import torch.utils.data
-from torch import nn
 
 from utils import CTCLabelConverter, AttnLabelConverter, Averager
 from dataset import hierarchical_dataset, AlignCollate, Batch_Balanced_Dataset
 from model import Model
 from modules.film import FiLMGen
 from test import validation
-from SEVN_gym.envs.utils import convert_street_name, convert_house_numbers
+from SEVN_gym.envs.utils import convert_house_numbers
 from load_ranges import get_random, get_sequence
 
 
@@ -54,7 +53,6 @@ def train(opt):
 
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
-        os.makedirs(output_dir + '/images')
 
     # Seed
     print('Random Seed: ', opt.manualSeed)
@@ -78,19 +76,24 @@ def train(opt):
         opt.workers = opt.workers * opt.num_gpu
 
     # Dataset preparation
+    # Get a list of the selected dataset
     opt.select_data = opt.select_data.split('-')
+    # Get a list of the ratio to use for the batch for each selected dataset
     opt.batch_ratio = opt.batch_ratio.split('-')
     train_dataset = Batch_Balanced_Dataset(opt)
 
+    # Same as for training
     AlignCollate_valid = AlignCollate(imgH=opt.imgH, imgW=opt.imgW,
                                       keep_ratio_with_pad=opt.PAD)
     valid_dataset = hierarchical_dataset(root=opt.valid_data, opt=opt)
     valid_loader = torch.utils.data.DataLoader(
-        valid_dataset, batch_size=opt.batch_size,
+        valid_dataset,
+        batch_size=opt.batch_size,
         # 'True' to check training progress with validation function.
         shuffle=True,
         num_workers=int(opt.workers),
-        collate_fn=AlignCollate_valid, pin_memory=True)
+        collate_fn=AlignCollate_valid,
+        pin_memory=True)
     print('-' * 80)
 
     # Model configuration
@@ -102,9 +105,9 @@ def train(opt):
 
     if opt.rgb:
         opt.input_channel = 3
+
     model = Model(opt)
-    import pdb; pdb.set_trace()
-    film_gen = FiLMGen(input_dim=200, emb_dim=1000, cond_feat_size=18944, transformer=opt.film_transformer)
+    film_gen = FiLMGen(input_dim=200, emb_dim=opt.film_emb, cond_feat_size=opt.cond_feat_size, init_xavier=opt.init_xavier)
     if torch.cuda.is_available():
         film_gen.cuda()
 
@@ -225,22 +228,41 @@ def train(opt):
             p.requires_grad = True
         for p in film_gen.parameters():
             p.requires_grad = True
+
+        # Get batch
+        # image_tensors: transformed image, size [batch_size, c, h, w].
+        # labels: list of labels, len batch size.
         image_tensors, labels = train_dataset.get_batch()
 
+        # Labels preprocessing
         ids = labels
+        # Labels are under the form 'doornumber_streetname'
+        # Get the list of house number
         labels = [label.split('_')[0] for label in labels]
-        num_hn = 5
-        cond_house_numbers = [get_random(
-            int(img_id.split('_')[0]),
-            img_id.split('_')[1], num_hn) for img_id in ids]
+        if opt.sequential_cond:
+            cond_house_numbers = []
+            for img_id in ids:
+                hn, sn = img_id.split('_')
+                cond_house_numbers.append(get_sequence(int(hn), sn, opt.num_cond_hn))
+        else:
+            cond_house_numbers = [get_random(
+                int(img_id.split('_')[0]),
+                img_id.split('_')[1], opt.num_cond_hn) for img_id in ids]
+        # Convert house number into vector of size 40.
+        # Only house number with under 4 digits can be converted.
+        assert all([len(str(n)) <= 4 for l in cond_house_numbers for n in l]),\
+            'Maximum door numbers = 4'
         cond_house_numbers = [
             convert_house_numbers(n) for l in cond_house_numbers for n in l]
         cond_house_numbers = torch.FloatTensor(cond_house_numbers)
-        cond_text = cond_house_numbers.view(-1, num_hn * 40)
+        # Reshape conditional text in a tensor of size [batch_size, 5*40]
+        cond_text = cond_house_numbers.view(-1, opt.num_cond_hn * 40)
 
         image = image_tensors
 
-        # Labels is a list of house numbers
+        # labels is a list of house numbers
+        # text correspond to the encoded house numbers
+        # length correspond to sequence lenght + 1
         text, length = converter.encode(labels)
         batch_size = image.size(0)
 
@@ -263,10 +285,16 @@ def train(opt):
             target = text[:, 1:]  # without [GO] Symbol
             cost = criterion(preds.view(-1, preds.shape[-1]),
                              target.contiguous().view(-1))
-
+        if opt.print_grad:
+            try:
+                print(f'model grad (sum): {sum([p.grad.sum() for p in model.parameters()])}')
+                print(f'film_gen grad (sum): {sum([p.grad.sum() for p in film_gen.parameters()])}')
+            except Exception:
+                pass
         model.zero_grad()
         film_gen.zero_grad()
         cost.backward()
+
         # Gradient clipping with 5 (Default)
         torch.nn.utils.clip_grad_norm_(model.parameters(), opt.grad_clip)
         optimizer.step()
